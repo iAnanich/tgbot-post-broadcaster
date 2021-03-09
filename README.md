@@ -7,7 +7,7 @@ This Telegram Bot can read channel posts and broadcast them to connected channel
 Bot does not require any permissions (except for posting messages in channel as admin) and functions well with privacy
 mode enabled.
 
-WIP - support for multiple source (sender) channels.
+WIP - support for multiple sources (sender) channels. WIP - configurable channels for sourcing posts.
 
 ### Setup
 

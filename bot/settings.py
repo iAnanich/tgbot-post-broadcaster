@@ -10,8 +10,9 @@ env.read_env(env_file=ENV_FILE)
 
 LOG_LEVEL = env.str('LOG_LEVEL', default='INFO')
 
+DB_URI = env.str('DB_URI', default='sqlite:///db.sqlite')
+
 TGBOT_APIKEY = env.str('TGBOT_APIKEY')
 
 ADMIN_USERNAMES = env.str('TGBOT_ADMIN_USERNAMES').split(',')
-
-DB_URI = env.str('DB_URI', default='sqlite:///db.sqlite')
+SOURCE_CHANNEL = env.int('TGBOT_SOURCE_CHANNEL')

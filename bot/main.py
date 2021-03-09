@@ -19,7 +19,7 @@ def main():
     """Start the bot."""
 
     filter_admins = Filters.user(username=settings.ADMIN_USERNAMES)
-    filter_channels = Filters.chat_type.channel
+    filter_channel = Filters.chat_type.channel & Filters.sender_chat(settings.SOURCE_CHANNEL)
     filter_groups = Filters.chat_type.supergroup
 
     # Create the Updater and pass it your bot's token.
@@ -50,7 +50,7 @@ def main():
     # Handle channel posts
     dispatcher.add_handler(
         MessageHandler(
-            filters=filter_channels & Filters.text,
+            filters=filter_channel & Filters.text,
             callback=handlers.handler_broadcast_post,
         )
     )
