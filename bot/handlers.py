@@ -17,7 +17,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # TODO
-HELP = '''Post Broadcaster Bot is'''
+HELP = '''Post Broadcaster Bot is dedicated to sharing posts from channels with multiple groups.
+Add bot to group chat and use /start command.'''
 
 
 @contextmanager
@@ -39,6 +40,26 @@ def db_session_from_context(context: CallbackContext):
 
 def command_start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
+    if update.effective_chat.type == update.effective_chat.PRIVATE:
+        update.message.reply_text(HELP)
+    elif update.effective_chat.type in {update.effective_chat.GROUP, update.effective_chat.SUPERGROUP}:
+        logger.debug(f'Command /start in {update.effective_chat.id} group.')
+        with db_session_from_context(context) as db_session:
+            rg = dbadapter.ReceiverGroup.get_or_create(
+                chat_id=update.effective_chat.id,
+                session=db_session,
+            )
+            if rg.enabled:
+                update.message.reply_text('Post broadcasting already enabled.')
+            else:
+                update.message.reply_text(
+                    'Greetings!\n'
+                    'Use command /enable to enable post broadcasting to this group chat.'
+                )
+
+
+def command_help(update: Update, context: CallbackContext) -> None:
+    """Help user understand the bot."""
     update.message.reply_text(HELP)
 
 
