@@ -1,0 +1,68 @@
+import logging
+
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+
+from . import dbadapter
+from . import handlers
+from . import settings
+from .storage import BotData
+
+# Enable logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=settings.LOG_LEVEL,
+)
+logger = logging.getLogger(__name__)
+
+
+def main():
+    """Start the bot."""
+
+    filter_admins = Filters.user(username=settings.ADMIN_USERNAMES)
+    filter_channels = Filters.chat_type.channel
+    filter_groups = Filters.chat_type.supergroup
+
+    # Create the Updater and pass it your bot's token.
+    updater = Updater(settings.TGBOT_APIKEY)
+
+    # Get the dispatcher to register handlers
+    dispatcher = updater.dispatcher
+
+    # on different commands - answer in Telegram
+    # ----
+    # Private commands
+    dispatcher.add_handler(CommandHandler("start", handlers.command_start))
+    # ----
+    # Group commands
+    dispatcher.add_handler(
+        CommandHandler(
+            "enable", handlers.command_enable,
+            filters=filter_admins & filter_groups,
+        )
+    )
+    dispatcher.add_handler(
+        CommandHandler(
+            "disable", handlers.command_disable,
+            filters=filter_admins & filter_groups,
+        )
+    )
+
+    # Handle channel posts
+    dispatcher.add_handler(
+        MessageHandler(
+            filters=filter_channels & Filters.text,
+            callback=handlers.handler_broadcast_post,
+        )
+    )
+
+    # Initialize DB
+    session = dbadapter.make_session()
+    dispatcher.bot_data[BotData.DB_SESSION] = session
+
+    # Start the Bot
+    updater.start_polling()
+
+    # Run the bot until you press Ctrl-C or the process receives SIGINT,
+    # SIGTERM or SIGABRT. This should be used most of the time, since
+    # start_polling() is non-blocking and will stop the bot gracefully.
+    updater.idle()
