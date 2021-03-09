@@ -19,8 +19,9 @@ def main():
     """Start the bot."""
 
     filter_admins = Filters.user(username=settings.ADMIN_USERNAMES)
-    filter_channel = Filters.chat_type.channel & Filters.sender_chat(settings.SOURCE_CHANNEL)
     filter_groups = Filters.chat_type.supergroup
+    filter_channel = Filters.chat_type.channel & Filters.sender_chat(settings.SOURCE_CHANNEL)
+    filter_posts = filter_channel & Filters.regex(settings.POST_REGEX)
 
     # Create the Updater and pass it your bot's token.
     updater = Updater(settings.TGBOT_APIKEY)
@@ -50,7 +51,7 @@ def main():
     # Handle channel posts
     dispatcher.add_handler(
         MessageHandler(
-            filters=filter_channel & Filters.text,
+            filters=filter_posts,
             callback=handlers.handler_broadcast_post,
         )
     )
