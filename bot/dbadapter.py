@@ -32,6 +32,7 @@ class ReceiverGroup(Base):
         if obj is not None:
             return obj
         new_obj = cls(chat_id=chat_id)
+        session.add(new_obj)
         return new_obj
 
     @classmethod

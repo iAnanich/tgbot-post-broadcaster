@@ -73,7 +73,6 @@ def command_enable(update: Update, context: CallbackContext) -> None:
             chat_id=update.effective_chat.id,
             session=db_session,
         )
-        db_session.add(rg)
 
     update.effective_message.reply_text(
         f'Broadcasting to this group chat successfully enabled.'
@@ -89,7 +88,6 @@ def command_disable(update: Update, context: CallbackContext) -> None:
             chat_id=update.effective_chat.id,
             session=db_session,
         )
-        db_session.add(rg)
 
     update.effective_message.reply_text(
         f'Broadcasting to this group chat successfully disabled.'
