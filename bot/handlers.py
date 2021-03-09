@@ -1,4 +1,5 @@
 import logging
+from contextlib import contextmanager
 
 import telegram
 from telegram import Update
@@ -19,6 +20,20 @@ logger = logging.getLogger(__name__)
 HELP = '''Post Broadcaster Bot is'''
 
 
+@contextmanager
+def db_session_from_context(context: CallbackContext):
+    """Provide a transactional scope around a series of operations."""
+    session = storage.BotData.get_db_session_maker(context.bot_data)()
+    try:
+        yield session
+        session.commit()
+    except:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
 # Bot commands
 # ============
 
@@ -31,12 +46,11 @@ def command_enable(update: Update, context: CallbackContext) -> None:
     """Connect current group to channel via it's short name."""
     logger.debug(f'Command /enable in {update.effective_chat.id} group.')
 
-    db_session = storage.BotData.get_db_session(context.bot_data)
-    rg = dbadapter.ReceiverGroup.enable_by_chat_id(
-        chat_id=update.effective_chat.id,
-        session=db_session,
-    )
-    db_session.commit()
+    with db_session_from_context(context) as db_session:
+        rg = dbadapter.ReceiverGroup.enable_by_chat_id(
+            chat_id=update.effective_chat.id,
+            session=db_session,
+        )
 
     update.effective_message.reply_text(
         f'Broadcasting to this group chat successfully enabled.'
@@ -47,12 +61,11 @@ def command_disable(update: Update, context: CallbackContext) -> None:
     """Disable broadcasting to current group from channel."""
     logger.debug(f'Command /disable in {update.effective_chat.id} group.')
 
-    db_session = storage.BotData.get_db_session(context.bot_data)
-    rg = dbadapter.ReceiverGroup.disable_by_chat_id(
-        chat_id=update.effective_chat.id,
-        session=db_session,
-    )
-    db_session.commit()
+    with db_session_from_context(context) as db_session:
+        rg = dbadapter.ReceiverGroup.disable_by_chat_id(
+            chat_id=update.effective_chat.id,
+            session=db_session,
+        )
 
     update.effective_message.reply_text(
         f'Broadcasting to this group chat successfully disabled.'
@@ -63,8 +76,8 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     """Broadcast post from channel to connected groups."""
     logger.debug(f'Post in {update.effective_chat.id} channel.')
 
-    db_session = storage.BotData.get_db_session(context.bot_data)
-    groups_broadcast_to = dbadapter.ReceiverGroup.list_enabled_chat_ids(session=db_session)
+    with db_session_from_context(context) as db_session:
+        groups_broadcast_to = dbadapter.ReceiverGroup.list_enabled_chat_ids(session=db_session)
 
     for group_id in groups_broadcast_to:
         try:

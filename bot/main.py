@@ -57,8 +57,8 @@ def main():
     )
 
     # Initialize DB
-    session = dbadapter.make_session()
-    dispatcher.bot_data[BotData.DB_SESSION] = session
+    session_maker = dbadapter.init_sessionmaker()
+    dispatcher.bot_data[BotData.DB_SESSION_MAKER] = session_maker
 
     # Start the Bot
     updater.start_polling()

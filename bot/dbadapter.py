@@ -68,6 +68,11 @@ def create_all_tables(uri: str = settings.DB_URI):
     Base.metadata.create_all(engine)
 
 
+def init_sessionmaker(uri: str = settings.DB_URI) -> sessionmaker:
+    engine = create_engine(uri)
+    return sessionmaker(bind=engine)
+
+
 def make_session(uri: str = settings.DB_URI) -> Session:
     engine = create_engine(uri)
     return sessionmaker(bind=engine)()
