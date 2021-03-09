@@ -28,7 +28,8 @@ def db_session_from_context(context: CallbackContext):
     try:
         yield session
         session.commit()
-    except:
+    except Exception as exc:
+        logger.exception(f'Unexpected error in attempt to commit session: ')
         session.rollback()
         raise
     finally:
@@ -100,6 +101,11 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     with db_session_from_context(context) as db_session:
         groups_broadcast_to = dbadapter.ReceiverGroup.list_enabled_chat_ids(session=db_session)
 
+    logger.debug(
+        f'Broadcasting post {update.effective_chat.id}/'
+        f'{update.effective_message.message_id} '
+        f'to {len(groups_broadcast_to)} group chats.'
+    )
     for group_id in groups_broadcast_to:
         try:
             context.bot.forward_message(

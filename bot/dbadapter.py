@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, Boolean
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 
@@ -21,14 +22,14 @@ class ReceiverGroup(Base):
     @classmethod
     def get_by_chat_id(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup' or None:
         try:
-            return session.query(cls).filter(cls.chat_id == chat_id).limit(1)[0]
-        except IndexError:
+            return session.query(cls).filter(cls.chat_id == chat_id).first()
+        except OperationalError as exc:
             return None
 
     @classmethod
     def get_or_create(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup':
         obj = cls.get_by_chat_id(chat_id=chat_id, session=session)
-        if obj:
+        if obj is not None:
             return obj
         new_obj = cls(chat_id=chat_id)
         session.add(new_obj)
