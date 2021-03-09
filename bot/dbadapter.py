@@ -32,21 +32,18 @@ class ReceiverGroup(Base):
         if obj is not None:
             return obj
         new_obj = cls(chat_id=chat_id)
-        session.add(new_obj)
         return new_obj
 
     @classmethod
     def enable_by_chat_id(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup':
         obj = cls.get_or_create(chat_id=chat_id, session=session)
         obj.enable()
-        session.add(obj)
         return obj
 
     @classmethod
     def disable_by_chat_id(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup':
         obj = cls.get_or_create(chat_id=chat_id, session=session)
         obj.disable()
-        session.add(obj)
         return obj
 
     @classmethod
