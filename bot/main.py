@@ -19,7 +19,7 @@ def main():
     """Start the bot."""
 
     filter_admins = Filters.user(username=settings.ADMIN_USERNAMES)
-    filter_groups = Filters.chat_type.supergroup
+    filter_groups = Filters.chat_type.supergroup | Filters.chat_type.group
     filter_channel = Filters.chat_type.channel & Filters.sender_chat(settings.SOURCE_CHANNEL)
     filter_posts = filter_channel & Filters.regex(settings.POST_REGEX)
 
