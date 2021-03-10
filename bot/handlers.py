@@ -5,9 +5,9 @@ import telegram
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from dbadapter import ReceiverGroup
 from . import settings
 from . import storage
+from .dbadapter import ReceiverGroup
 
 # Enable logging
 logging.basicConfig(
