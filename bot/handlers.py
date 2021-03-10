@@ -84,7 +84,7 @@ def command_enable(update: Update, context: CallbackContext) -> None:
         elif rg.enabled:
             reply_msg = 'Broadcasting to this group chat already enabled.'
         else:
-            rg.disable()
+            rg.enable()
             db_session.add(rg)
             reply_msg = 'Broadcasting to this group chat successfully enabled.'
 
