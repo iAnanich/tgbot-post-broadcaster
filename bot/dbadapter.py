@@ -36,18 +36,6 @@ class ReceiverGroup(Base):
         return new_obj
 
     @classmethod
-    def enable_by_chat_id(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup':
-        obj = cls.get_or_create(chat_id=chat_id, session=session)
-        obj.enable()
-        return obj
-
-    @classmethod
-    def disable_by_chat_id(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup':
-        obj = cls.get_or_create(chat_id=chat_id, session=session)
-        obj.disable()
-        return obj
-
-    @classmethod
     def list_enabled_chat_ids(cls, *, session: Session) -> [int, ...]:
         query = session.query(cls.chat_id).filter(cls.enabled == True)
         return [chat_id for chat_id, in query]

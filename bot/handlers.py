@@ -5,7 +5,7 @@ import telegram
 from telegram import Update
 from telegram.ext import CallbackContext
 
-from . import dbadapter
+from dbadapter import ReceiverGroup
 from . import settings
 from . import storage
 
@@ -45,18 +45,22 @@ def command_start(update: Update, context: CallbackContext) -> None:
         update.message.reply_text(HELP)
     elif update.effective_chat.type in {update.effective_chat.GROUP, update.effective_chat.SUPERGROUP}:
         logger.debug(f'Command /start in {update.effective_chat.id} group.')
+        chat_id = update.effective_chat.id
+
         with db_session_from_context(context) as db_session:
-            rg = dbadapter.ReceiverGroup.get_or_create(
-                chat_id=update.effective_chat.id,
+            rg = ReceiverGroup.get_or_create(
+                chat_id=chat_id,
                 session=db_session,
             )
             if rg.enabled:
-                update.message.reply_text('Post broadcasting already enabled.')
+                reply_msg = 'Post broadcasting already enabled.'
             else:
-                update.message.reply_text(
+                reply_msg = (
                     'Greetings!\n'
                     'Use command /enable to enable post broadcasting to this group chat.'
                 )
+
+        update.message.reply_text(reply_msg)
 
 
 def command_help(update: Update, context: CallbackContext) -> None:
@@ -67,51 +71,68 @@ def command_help(update: Update, context: CallbackContext) -> None:
 def command_enable(update: Update, context: CallbackContext) -> None:
     """Connect current group to channel via it's short name."""
     logger.debug(f'Command /enable in {update.effective_chat.id} group.')
+    chat_id = update.effective_chat.id
 
     with db_session_from_context(context) as db_session:
-        rg = dbadapter.ReceiverGroup.enable_by_chat_id(
-            chat_id=update.effective_chat.id,
+        rg = ReceiverGroup.get_by_chat_id(
+            chat_id=chat_id,
             session=db_session,
         )
+        if not rg:
+            # This must not happen
+            reply_msg = 'Use command /start first.'
+        elif rg.enabled:
+            reply_msg = 'Broadcasting to this group chat already enabled.'
+        else:
+            rg.disable()
+            db_session.add(rg)
+            reply_msg = 'Broadcasting to this group chat successfully enabled.'
 
-    update.effective_message.reply_text(
-        f'Broadcasting to this group chat successfully enabled.'
-    )
+    update.effective_message.reply_text(reply_msg)
 
 
 def command_disable(update: Update, context: CallbackContext) -> None:
     """Disable broadcasting to current group from channel."""
     logger.debug(f'Command /disable in {update.effective_chat.id} group.')
+    chat_id = update.effective_chat.id
 
     with db_session_from_context(context) as db_session:
-        rg = dbadapter.ReceiverGroup.disable_by_chat_id(
-            chat_id=update.effective_chat.id,
+        rg = ReceiverGroup.get_by_chat_id(
+            chat_id=chat_id,
             session=db_session,
         )
+        if not rg:
+            # This must not happen
+            reply_msg = 'Use command /start first.'
+        elif rg.enabled:
+            reply_msg = 'Broadcasting to this group chat already disabled.'
+        else:
+            rg.enable()
+            db_session.add(rg)
+            reply_msg = 'Broadcasting to this group chat successfully disabled.'
 
-    update.effective_message.reply_text(
-        f'Broadcasting to this group chat successfully disabled.'
-    )
+    update.effective_message.reply_text(reply_msg)
 
 
 def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     """Broadcast post from channel to connected groups."""
     logger.debug(f'Post in {update.effective_chat.id} channel.')
+    chat_id = update.effective_chat.id
+    post_id = update.effective_message.message_id
 
     with db_session_from_context(context) as db_session:
-        groups_broadcast_to = dbadapter.ReceiverGroup.list_enabled_chat_ids(session=db_session)
+        groups_broadcast_to = ReceiverGroup.list_enabled_chat_ids(session=db_session)
 
     logger.debug(
-        f'Broadcasting post {update.effective_chat.id}/'
-        f'{update.effective_message.message_id} '
+        f'Broadcasting post {post_id} '
         f'to {len(groups_broadcast_to)} group chats.'
     )
     for group_id in groups_broadcast_to:
         try:
             context.bot.forward_message(
                 chat_id=group_id,
-                from_chat_id=update.effective_chat.id,
-                message_id=update.effective_message.message_id,
+                from_chat_id=chat_id,
+                message_id=post_id,
             )
         except telegram.error.BadRequest as bad_request:
             logger.warning(
@@ -122,6 +143,6 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
             logger.exception(f'Unhandled error during attempt ot forward message:')
         else:
             logger.debug(
-                f'Successfully forwarded message {update.effective_message.message_id}'
+                f'Successfully forwarded message {post_id}'
                 f' to chat {group_id}'
             )
