@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Boolean
+from sqlalchemy import Column, Integer, BigInteger, Boolean
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
@@ -16,7 +16,7 @@ class ReceiverGroup(Base):
         ENABLED = False
 
     id = Column(Integer, primary_key=True)
-    chat_id = Column(Integer, unique=True)
+    chat_id = Column(BigInteger, unique=True)
     enabled = Column(Boolean, default=Default.ENABLED)
 
     @classmethod
