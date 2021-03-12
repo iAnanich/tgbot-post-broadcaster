@@ -104,10 +104,10 @@ def command_disable(update: Update, context: CallbackContext) -> None:
         if not rg:
             # This must not happen
             reply_msg = 'Use command /start first.'
-        elif rg.enabled:
+        elif rg.disabled:
             reply_msg = 'Broadcasting to this group chat already disabled.'
         else:
-            rg.enable()
+            rg.disable()
             db_session.add(rg)
             reply_msg = 'Broadcasting to this group chat successfully disabled.'
 
