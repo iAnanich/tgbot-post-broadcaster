@@ -78,12 +78,24 @@ def command_help(update: Update, context: CallbackContext) -> None:
 
 def command_debug(update: Update, context: CallbackContext) -> None:
     """Display debug info."""
+    chat = update.effective_chat
     text = (
-        f'Chat ID: {update.effective_chat.id}'
-        f'Chat type: {update.effective_chat.type}'
-        f'Chat title: {update.effective_chat.title}'
+        f'Chat ID: `{chat.id}`\n'
+        f'Chat type: `{chat.type}`\n'
+        f'Chat title: `{chat.title}`\n'
     )
-    update.message.reply_text(text)
+    if chat.type in {chat.GROUP, chat.SUPERGROUP}:
+        try:
+            with db_session_from_context(context) as db_session:
+                rg = ReceiverGroup.get_by_chat_id(
+                    chat_id=chat.id,
+                    session=db_session,
+                )
+                rg: ReceiverGroup
+                text += f'Broadcasting enabled: `{rg.enabled}`\n'
+        except Exception as exc:
+            text += f'Could not retrieve group data.'
+    update.message.reply_markdown(text)
 
 
 def command_enable(update: Update, context: CallbackContext) -> None:
