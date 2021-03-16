@@ -79,7 +79,7 @@ def command_help(update: Update, context: CallbackContext) -> None:
 def command_debug(update: Update, context: CallbackContext) -> None:
     """Display debug info."""
     chat = update.effective_chat
-    text = (
+    reply_md = (
         f'Chat ID: `{chat.id}`\n'
         f'Chat type: `{chat.type}`\n'
         f'Chat title: `{chat.title}`\n'
@@ -93,13 +93,40 @@ def command_debug(update: Update, context: CallbackContext) -> None:
                 )
                 rg: ReceiverGroup
         except Exception as exc:
-            text += f'Could not retrieve group chat data.'
+            reply_md += f'Could not retrieve group chat data.'
         else:
             if rg:
-                text += f'Broadcasting enabled: `{rg.enabled}`\n'
+                reply_md += f'Broadcasting enabled: `{rg.enabled}`\n'
             else:
-                text += f'No data for this group chat.'
-    update.message.reply_markdown(text)
+                reply_md += f'No data for this group chat.'
+
+    update.message.reply_markdown(reply_md)
+
+
+def command_status(update: Update, context: CallbackContext) -> None:
+    logger.debug(f'Command /disable in {update.effective_chat.id} group.')
+    chat_id = update.effective_chat.id
+
+    with db_session_from_context(context) as db_session:
+        rg = ReceiverGroup.get_by_chat_id(
+            chat_id=chat_id,
+            session=db_session,
+        )
+        rg: ReceiverGroup
+        if not rg:
+            reply_md = 'Use command /start to initialize the bot.'
+        elif rg.enabled:
+            reply_md = (
+                'Broadcasting to this group chat is enabled.\n'
+                'Use command /disable to disable it.'
+            )
+        else:
+            reply_md = (
+                'Broadcasting to this group chat is disabled.\n'
+                'Use command /enable to enable it.'
+            )
+
+    update.message.reply_markdown(reply_md)
 
 
 def command_enable(update: Update, context: CallbackContext) -> None:
