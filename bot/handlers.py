@@ -92,9 +92,13 @@ def command_debug(update: Update, context: CallbackContext) -> None:
                     session=db_session,
                 )
                 rg: ReceiverGroup
-                text += f'Broadcasting enabled: `{rg.enabled}`\n'
         except Exception as exc:
-            text += f'Could not retrieve group data.'
+            text += f'Could not retrieve group chat data.'
+        else:
+            if rg:
+                text += f'Broadcasting enabled: `{rg.enabled}`\n'
+            else:
+                text += f'No data for this group chat.'
     update.message.reply_markdown(text)
 
 
@@ -110,8 +114,6 @@ def command_enable(update: Update, context: CallbackContext) -> None:
         )
         rg: ReceiverGroup
         if not rg:
-            # This must not happen
-            logger.warning(f'Someone managed to successfully call /enable before /start')
             reply_msg = 'Use command /start first.'
         elif rg.is_enabled:
             reply_msg = 'Broadcasting to this group chat already enabled.'
@@ -135,8 +137,6 @@ def command_disable(update: Update, context: CallbackContext) -> None:
         )
         rg: ReceiverGroup
         if not rg:
-            # This must not happen
-            logger.warning(f'Someone managed to successfully call /disable before /start')
             reply_msg = 'Use command /start first.'
         elif rg.is_disabled:
             reply_msg = 'Broadcasting to this group chat already disabled.'
