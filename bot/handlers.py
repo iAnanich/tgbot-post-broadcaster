@@ -25,6 +25,7 @@ Note: bot only obeys pre-defined admins.
 Other commands:
 /enable - enable broadcasting to this chat (disabled by default)
 /disable - disable broadcasting to this chat
+/status - display group chat status
 /help - display this message
 '''
 
