@@ -19,6 +19,14 @@ class ReceiverGroup(Base):
     chat_id = Column(BigInteger, unique=True)
     enabled = Column(Boolean, default=Default.ENABLED)
 
+    @property
+    def is_enabled(self) -> bool:
+        return self.enabled
+
+    @property
+    def is_disabled(self) -> bool:
+        return not self.enabled
+
     @classmethod
     def get_by_chat_id(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup' or None:
         try:

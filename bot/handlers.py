@@ -78,10 +78,12 @@ def command_enable(update: Update, context: CallbackContext) -> None:
             chat_id=chat_id,
             session=db_session,
         )
+        rg: ReceiverGroup
         if not rg:
             # This must not happen
+            logger.warning(f'Someone managed to successfully call /enable before /start')
             reply_msg = 'Use command /start first.'
-        elif rg.enabled:
+        elif rg.is_enabled:
             reply_msg = 'Broadcasting to this group chat already enabled.'
         else:
             rg.enable()
@@ -101,10 +103,12 @@ def command_disable(update: Update, context: CallbackContext) -> None:
             chat_id=chat_id,
             session=db_session,
         )
+        rg: ReceiverGroup
         if not rg:
             # This must not happen
+            logger.warning(f'Someone managed to successfully call /disable before /start')
             reply_msg = 'Use command /start first.'
-        elif rg.disabled:
+        elif rg.is_disabled:
             reply_msg = 'Broadcasting to this group chat already disabled.'
         else:
             rg.disable()
