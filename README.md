@@ -20,9 +20,10 @@ To start the bot, please follow the steps below:
 
 ### Controls
 
-* `/start` - get general information about bot (WIP)
+* `/help` - get general information about bot
 
 #### In-group commands
 
+* `/start` - initialise group chat
 * `/enable` - enable forwarding to this group chat
 * `/disable` - disable forwarding to this group chat

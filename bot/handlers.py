@@ -16,9 +16,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# TODO
-HELP = '''Post Broadcaster Bot is dedicated to sharing posts from channels with multiple groups.
-Add bot to group chat and use /start command.'''
+HELP = '''
+Post Broadcaster Bot is dedicated to sharing posts from channels with multiple groups.
+
+Add bot to group chat and use /start command.
+Note: bot only obeys pre-defined admins.
+
+Other commands:
+/enable - enable broadcasting to this chat (disabled by default)
+/disable - disable broadcasting to this chat
+/help - display this message
+'''
 
 
 @contextmanager
