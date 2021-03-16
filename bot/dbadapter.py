@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy import Column, Integer, BigInteger, Boolean
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
@@ -7,6 +9,21 @@ from sqlalchemy.orm import sessionmaker, Session
 from . import settings
 
 Base = declarative_base()
+
+
+def create_all_tables(uri: str = settings.DB_URI):
+    engine = create_engine(uri)
+    Base.metadata.create_all(engine)
+
+
+def init_sessionmaker(uri: str = settings.DB_URI) -> sessionmaker:
+    engine = create_engine(uri)
+    return sessionmaker(bind=engine)
+
+
+def make_session(uri: str = settings.DB_URI) -> Session:
+    engine = create_engine(uri)
+    return sessionmaker(bind=engine)()
 
 
 class ReceiverGroup(Base):
@@ -57,17 +74,28 @@ class ReceiverGroup(Base):
     def __repr__(self) -> str:
         return f'<ReceiverGroup chat_id={self.chat_id} [{"x" if self.enabled else " "}]>'
 
+    def to_dict(self) -> dict:
+        d = {
+            'chat_id': self.chat_id,
+            'enabled': self.enabled,
+        }
+        return d
 
-def create_all_tables(uri: str = settings.DB_URI):
-    engine = create_engine(uri)
-    Base.metadata.create_all(engine)
+    @classmethod
+    def from_dict(cls, d: dict, *, session: Optional[Session]) -> 'ReceiverGroup':
+        obj = cls(
+            chat_id=d['chat_id'],
+            enabled=d.get('enabled', False),
+        )
+        if session:
+            session.add(obj)
+        return obj
 
+    @classmethod
+    def dump_all_to_serializable(cls, *, session: Session) -> [dict, ...]:
+        return [obj.to_dict() for obj in session.query(cls).all()]
 
-def init_sessionmaker(uri: str = settings.DB_URI) -> sessionmaker:
-    engine = create_engine(uri)
-    return sessionmaker(bind=engine)
-
-
-def make_session(uri: str = settings.DB_URI) -> Session:
-    engine = create_engine(uri)
-    return sessionmaker(bind=engine)()
+    @classmethod
+    def load_from_serializable(cls, serializable: [dict, ...],
+                               *, session: Optional[Session]) -> ['ReceiverGroup', ...]:
+        return [cls.from_dict(obj_dict, session=session) for obj_dict in serializable]
