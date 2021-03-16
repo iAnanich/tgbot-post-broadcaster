@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import Column, Integer, BigInteger, Boolean
+from sqlalchemy import Column, Integer, BigInteger, Boolean, String
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
@@ -35,6 +35,7 @@ class ReceiverGroup(Base):
     id = Column(Integer, primary_key=True)
     chat_id = Column(BigInteger, unique=True)
     enabled = Column(Boolean, default=Default.ENABLED)
+    title = Column(String(length=255), nullable=True)
 
     @property
     def is_enabled(self) -> bool:
@@ -52,11 +53,12 @@ class ReceiverGroup(Base):
             return None
 
     @classmethod
-    def get_or_create(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup':
+    def get_or_create(cls, chat_id: int, title: str,
+                      *, session: Session) -> 'ReceiverGroup':
         obj = cls.get_by_chat_id(chat_id=chat_id, session=session)
         if obj is not None:
             return obj
-        new_obj = cls(chat_id=chat_id)
+        new_obj = cls(chat_id=chat_id, title=title)
         session.add(new_obj)
         return new_obj
 
@@ -71,6 +73,13 @@ class ReceiverGroup(Base):
     def disable(self):
         self.enabled = False
 
+    def update_title(self, title: str) -> bool:
+        if title != self.title:
+            self.title = title
+            return True
+        # if passed old value - do nothing
+        return False
+
     def __repr__(self) -> str:
         return f'<ReceiverGroup chat_id={self.chat_id} [{"x" if self.enabled else " "}]>'
 
@@ -78,6 +87,7 @@ class ReceiverGroup(Base):
         d = {
             'chat_id': self.chat_id,
             'enabled': self.enabled,
+            'title': self.title,
         }
         return d
 
@@ -86,6 +96,7 @@ class ReceiverGroup(Base):
         obj = cls(
             chat_id=d['chat_id'],
             enabled=d.get('enabled', False),
+            title=d.get('title', None),
         )
         if session:
             session.add(obj)
