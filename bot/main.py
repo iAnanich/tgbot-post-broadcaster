@@ -31,9 +31,10 @@ def main():
 
     # on different commands - answer in Telegram
     # ----
+    dispatcher.add_handler(CommandHandler("help", handlers.command_help))
+    dispatcher.add_handler(CommandHandler("debug", handlers.command_debug))
     # Private commands
     dispatcher.add_handler(CommandHandler("start", handlers.command_start, filters=Filters.chat_type.private))
-    dispatcher.add_handler(CommandHandler("help", handlers.command_help))
     # ----
     # Group commands
     dispatcher.add_handler(

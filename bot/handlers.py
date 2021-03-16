@@ -68,6 +68,16 @@ def command_help(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(HELP)
 
 
+def command_debug(update: Update, context: CallbackContext) -> None:
+    """Display debug info."""
+    text = (
+        f'Chat ID: {update.effective_chat.id}'
+        f'Chat type: {update.effective_chat.type}'
+        f'Chat title: {update.effective_chat.title}'
+    )
+    update.message.reply_text(text)
+
+
 def command_enable(update: Update, context: CallbackContext) -> None:
     """Connect current group to channel via it's short name."""
     logger.debug(f'Command /enable in {update.effective_chat.id} group.')
