@@ -53,7 +53,7 @@ def command_start(update: Update, context: CallbackContext) -> None:
     if update.effective_chat.type == update.effective_chat.PRIVATE:
         update.message.reply_text(HELP)
     elif update.effective_chat.type in {update.effective_chat.GROUP, update.effective_chat.SUPERGROUP}:
-        logger.debug(f'Command /start in {update.effective_chat.id} group.')
+        logger.debug(f'Command /start from {update.effective_chat.id} chat.')
         chat = update.effective_chat
 
         with db_session_from_context(context) as db_session:
@@ -80,7 +80,9 @@ def command_help(update: Update, context: CallbackContext) -> None:
 
 def command_debug(update: Update, context: CallbackContext) -> None:
     """Display debug info."""
+    logger.debug(f'Command /debug from {update.effective_chat.id} chat.')
     chat = update.effective_chat
+
     reply_md = (
         f'Chat ID: `{chat.id}`\n'
         f'Chat type: `{chat.type}`\n'
@@ -107,7 +109,7 @@ def command_debug(update: Update, context: CallbackContext) -> None:
 
 
 def command_status(update: Update, context: CallbackContext) -> None:
-    logger.debug(f'Command /disable in {update.effective_chat.id} group.')
+    logger.debug(f'Command /status from {update.effective_chat.id} chat.')
     chat = update.effective_chat
 
     with db_session_from_context(context) as db_session:
@@ -140,7 +142,7 @@ def command_status(update: Update, context: CallbackContext) -> None:
 
 def command_enable(update: Update, context: CallbackContext) -> None:
     """Connect current group to channel via it's short name."""
-    logger.debug(f'Command /enable in {update.effective_chat.id} group.')
+    logger.debug(f'Command /enable from {update.effective_chat.id} chat.')
     chat = update.effective_chat
 
     with db_session_from_context(context) as db_session:
@@ -168,7 +170,7 @@ def command_enable(update: Update, context: CallbackContext) -> None:
 
 def command_disable(update: Update, context: CallbackContext) -> None:
     """Disable broadcasting to current group from channel."""
-    logger.debug(f'Command /disable in {update.effective_chat.id} group.')
+    logger.debug(f'Command /disable from {update.effective_chat.id} chat.')
     chat = update.effective_chat
 
     with db_session_from_context(context) as db_session:

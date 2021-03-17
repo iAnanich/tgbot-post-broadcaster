@@ -11,18 +11,18 @@ from . import settings
 Base = declarative_base()
 
 
-def create_all_tables(uri: str = settings.DB_URI):
-    engine = create_engine(uri)
+def create_all_tables(db_uri: Optional[str] = None) -> None:
+    engine = create_engine(db_uri or settings.DB_URI)
     Base.metadata.create_all(engine)
 
 
-def init_sessionmaker(uri: str = settings.DB_URI) -> sessionmaker:
-    engine = create_engine(uri)
+def init_sessionmaker(db_uri: Optional[str] = None) -> sessionmaker:
+    engine = create_engine(db_uri or settings.DB_URI)
     return sessionmaker(bind=engine)
 
 
-def make_session(uri: str = settings.DB_URI) -> Session:
-    engine = create_engine(uri)
+def make_session(db_uri: Optional[str] = None) -> Session:
+    engine = create_engine(db_uri or settings.DB_URI)
     return sessionmaker(bind=engine)()
 
 
