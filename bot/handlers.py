@@ -226,7 +226,7 @@ def command_tags(update: Update, context: CallbackContext) -> None:
                 db_session.add(rg)
                 reply_md = 'Updated subscription tags to:\n'
                 reply_md += '\n'.join(
-                    f'{i + 1}) #{t}' for i, t in enumerate(rg.tags)
+                    f'{i + 1}) #{t}   unsubscribe by copy&pasting _/tags -{t}_' for i, t in enumerate(rg.tags)
                 ) + '\n'
                 if not_allowed_tags:
                     reply_md += 'These tags where provided, but are not allowed:\n'
@@ -239,23 +239,23 @@ def command_tags(update: Update, context: CallbackContext) -> None:
             if rg.tags:
                 reply_md = f'Active subscription tags:\n'
                 reply_md += '\n'.join(
-                    f'{i + 1}) #{t}  unsubscribe by copy&pasting _/tags -{t}_' for i, t in enumerate(rg.tags)
+                    f'{i + 1}) #{t}   unsubscribe by copy&pasting _/tags -{t}_' for i, t in enumerate(rg.tags)
                 ) + '\n'
             else:
                 reply_md = 'No active subscription tags.\n'
+            reply_md += '\n'
             reply_md += 'To change subscription tags, pass them to this ' + \
                         'command in the following format: `/tags +TagIWantToAdd -TagIWantToRemove`\n'
+            reply_md += '\n'
             if rg.tags:
                 reply_md += 'List of other allowed tags:\n'
-                reply_md += '\n'.join(
-                    f'~ #{t}  subscribe by copy&pasting _/tags +{t}_' for t in
-                    settings.POST_TAGS.difference(rg.tags_set)
-                )
             else:
                 reply_md += 'List of all allowed tags:\n'
-                reply_md += '\n'.join(
-                    f'~ #{t}  subscribe by copy&pasting _/tags +{t}_' for t in settings.POST_TAGS
-                )
+            other_tags = list(settings.POST_TAGS.difference(rg.tags_set))
+            other_tags.sort()
+            reply_md += '\n'.join(
+                f'~ #{t}   subscribe by copy&pasting _/tags +{t}_' for t in other_tags
+            )
 
         # update chat data
         if rg.update_title(title=chat.title):
@@ -302,6 +302,7 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
 
     with db_session_from_context(context) as db_session:
         enabled_groups = list(db_session.query(ReceiverGroup).filter(ReceiverGroup.enabled == True))
+        sent_to_chat_ids = set()
 
         # update chat titles for later use
         for rg in enabled_groups:
@@ -312,4 +313,7 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
         for tag in post_tags:
             receiver_groups = filter(lambda rg: tag in rg.tags_set, enabled_groups)
             for rg in receiver_groups:
+                if rg.chat_id in sent_to_chat_ids:
+                    continue
                 _forward_post(receiver_group=rg, update=update, context=context)
+                sent_to_chat_ids.add(rg.chat_id)
