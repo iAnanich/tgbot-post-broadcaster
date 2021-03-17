@@ -123,16 +123,24 @@ def command_status(update: Update, context: CallbackContext) -> None:
         if not rg:
             reply_md = 'Use command /start to initialize the bot.'
         else:
+            # Enabled/disabled
             if rg.enabled:
                 reply_md = (
                     'Broadcasting to this group chat is enabled.\n'
-                    'Use command /disable to disable it.'
+                    'Use command /disable to disable it.\n'
                 )
             else:
                 reply_md = (
                     'Broadcasting to this group chat is disabled.\n'
-                    'Use command /enable to enable it.'
+                    'Use command /enable to enable it.\n'
                 )
+
+            # Tag subscriptions
+            if rg.tags:
+                reply_md += f'\nSubscribed to tags: ' + ' '.join(f'#{t}' for t in rg.tags) + '\n'
+            else:
+                reply_md += '\nNo active subscriptions.'
+            reply_md += 'Use command /tags to manage tag subscriptions.'
 
             # update chat data
             if rg.update_title(title=chat.title):
