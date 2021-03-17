@@ -224,24 +224,38 @@ def command_tags(update: Update, context: CallbackContext) -> None:
             )
             if tags_changed:
                 db_session.add(rg)
-                reply_md = 'Updated subscription tags to:\n' + \
-                           '\n'.join(f'{i + 1}) #{t}' for i, t in enumerate(rg.tags)) + '\n'
+                reply_md = 'Updated subscription tags to:\n'
+                reply_md += '\n'.join(
+                    f'{i + 1}) #{t}' for i, t in enumerate(rg.tags)
+                ) + '\n'
                 if not_allowed_tags:
-                    reply_md += 'These tags where provided, but are not allowed:\n' + \
-                                '\n'.join(f'- `{t}`' for t in not_allowed_tags)
+                    reply_md += 'These tags where provided, but are not allowed:\n'
+                    reply_md += '\n'.join(f'~ `{t}`' for t in not_allowed_tags)
             elif not_allowed_tags:
                 reply_md = 'All provided tags are not allowed.'
             else:
                 reply_md = 'No changes detected.'
         else:
             if rg.tags:
-                reply_md = f'Active subscription tags:\n' + \
-                           '\n'.join(f'{i + 1}) #{t}' for i, t in enumerate(rg.tags)) + '\n'
+                reply_md = f'Active subscription tags:\n'
+                reply_md += '\n'.join(
+                    f'{i + 1}) #{t}  unsubscribe by copy&pasting _/tags -{t}_' for i, t in enumerate(rg.tags)
+                ) + '\n'
             else:
                 reply_md = 'No active subscription tags.\n'
             reply_md += 'To change subscription tags, pass them to this ' + \
-                        'command in the following format: `/tags +TagIWantToAdd -TagIWantToRemove`\n' + \
-                        'Allowed tags are:\n' + '\n'.join(f'~ #{t}' for t in settings.POST_TAGS)
+                        'command in the following format: `/tags +TagIWantToAdd -TagIWantToRemove`\n'
+            if rg.tags:
+                reply_md += 'List of other allowed tags:\n'
+                reply_md += '\n'.join(
+                    f'~ #{t}  subscribe by copy&pasting _/tags +{t}_' for t in
+                    settings.POST_TAGS.difference(rg.tags_set)
+                )
+            else:
+                reply_md += 'List of all allowed tags:\n'
+                reply_md += '\n'.join(
+                    f'~ #{t}  subscribe by copy&pasting _/tags +{t}_' for t in settings.POST_TAGS
+                )
 
         # update chat data
         if rg.update_title(title=chat.title):
