@@ -1,4 +1,4 @@
-# tgbot-post-broadcaster
+# tgbot-post-broadcaster v0.2
 
 Channel Post Broadcaster Telegram Bot
 
@@ -24,6 +24,10 @@ To start the bot, please follow the steps below:
 
 #### In-group commands
 
+All commands below are admin-only:
+
 * `/start` - initialise group chat
 * `/enable` - enable forwarding to this group chat
 * `/disable` - disable forwarding to this group chat
+* `/status` - display group chat status
+* `/debug` - display debug info
