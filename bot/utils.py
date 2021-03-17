@@ -24,7 +24,7 @@ def load_from_json(fn: str):
     db_session = dbadapter.make_session()
     try:
         dbadapter.ReceiverGroup.load_from_serializable(
-            serializable=serializable,
+            serializable=serializable['ReceiverGroup'],
             session=db_session,
         )
         db_session.commit()
