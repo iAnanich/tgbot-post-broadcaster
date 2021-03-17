@@ -17,8 +17,8 @@ TGBOT_APIKEY = env.str('TGBOT_APIKEY')
 ADMIN_USERNAMES = env.str('TGBOT_ADMIN_USERNAMES').split(',')
 SOURCE_CHANNEL = env.int('TGBOT_SOURCE_CHANNEL')
 POST_REGEX = env.str('TGBOT_POST_REGEX') or ''
-POST_TAGS = [
+POST_TAGS = frozenset(
     t[1:] if t.startswith('#') else t
     for t in env.str('TGBOT_POST_TAGS', default='').split(',')
     if t
-]
+)
