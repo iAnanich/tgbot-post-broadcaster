@@ -1,4 +1,4 @@
-# tgbot-post-broadcaster v0.2
+# tgbot-post-broadcaster v0.3
 
 Channel Post Broadcaster Telegram Bot
 
@@ -30,4 +30,5 @@ All commands below are admin-only:
 * `/enable` - enable forwarding to this group chat
 * `/disable` - disable forwarding to this group chat
 * `/status` - display group chat status
+* `/tags` - manage tag subscriptions
 * `/debug` - display debug info
