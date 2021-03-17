@@ -98,7 +98,12 @@ class ReceiverGroup(Base):
 
     def set_tags(self, tags: Iterable[str]) -> bool:
         if set(tags) != self.tags_set:
-            self.tags = list(tags)
+            sortable = list(tags)
+            try:
+                sortable.sort()
+            except Exception as exc:
+                logger.warning(f'Tags sorting failed due to error: {exc}')
+            self.tags = sortable
             logger.info(f'Changing tags of chatID={self.chat_id}')
             return True
         # if passed old value - do nothing
