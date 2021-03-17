@@ -56,6 +56,12 @@ def main():
     )
     dispatcher.add_handler(
         CommandHandler(
+            "tags", handlers.command_tags,
+            filters=filter_admins & filter_groups,
+        )
+    )
+    dispatcher.add_handler(
+        CommandHandler(
             "enable", handlers.command_enable,
             filters=filter_admins & filter_groups,
         )

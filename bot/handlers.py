@@ -26,6 +26,7 @@ Other commands:
 /enable - enable broadcasting to this chat (disabled by default)
 /disable - disable broadcasting to this chat
 /status - display group chat status
+/tags - modify tag subscriptions
 /help - display this message
 '''
 
@@ -196,35 +197,105 @@ def command_disable(update: Update, context: CallbackContext) -> None:
     update.effective_message.reply_text(reply_msg)
 
 
+def command_tags(update: Update, context: CallbackContext) -> None:
+    """Manage group chat tags."""
+    logger.debug(f'Command /tags from {update.effective_chat.id} chat.')
+    chat = update.effective_chat
+
+    with db_session_from_context(context) as db_session:
+        rg = ReceiverGroup.get_by_chat_id(
+            chat_id=chat.id,
+            session=db_session,
+        )
+        rg: ReceiverGroup
+        if not rg:
+            reply_msg = 'Use command /start first.'
+            update.effective_message.reply_text(reply_msg)
+            return
+
+        if context.args:
+            tags_to_add = set(t[1:] for t in context.args if t.startswith('+'))
+            not_allowed_tags = tags_to_add.difference(settings.POST_TAGS)
+            tags_to_remove = set(t[1:] for t in context.args if t.startswith('-'))
+
+            tags_changed = rg.update_tags(
+                tags_to_add=tags_to_add.intersection(settings.POST_TAGS),
+                tags_to_remove=tags_to_remove,
+            )
+            if tags_changed:
+                db_session.add(rg)
+                reply_md = 'Updated subscription tags to:\n' + \
+                           '\n'.join(f'{i + 1}) #{t}' for i, t in enumerate(rg.tags)) + '\n'
+                if not_allowed_tags:
+                    reply_md += 'These tags where provided, but are not allowed:\n' + \
+                                '\n'.join(f'- `{t}`' for t in not_allowed_tags)
+            elif not_allowed_tags:
+                reply_md = 'All provided tags are not allowed.'
+            else:
+                reply_md = 'No changes detected.'
+        else:
+            if rg.tags:
+                reply_md = f'Active subscription tags:\n' + \
+                           '\n'.join(f'{i + 1}) #{t}' for i, t in enumerate(rg.tags)) + '\n'
+            else:
+                reply_md = 'No active subscription tags.\n'
+            reply_md += 'To change subscription tags, pass them to this ' + \
+                        'command in the following format: `/tags +TagIWantToAdd -TagIWantToRemove`\n' + \
+                        'Allowed tags are:\n' + '\n'.join(f'~ #{t}' for t in settings.POST_TAGS)
+
+        # update chat data
+        if rg.update_title(title=chat.title):
+            db_session.add(rg)
+
+    update.effective_message.reply_markdown(reply_md)
+
+
+def _forward_post(receiver_group: ReceiverGroup, *, update: Update, context: CallbackContext):
+    source_chat = update.effective_chat
+    post = update.effective_message
+    logger.debug(
+        f'Preparing to forward message {source_chat.id}/{post.message_id} '
+        f'to chat {receiver_group.chat_id} "{receiver_group.title}"'
+    )
+    try:
+        context.bot.forward_message(
+            chat_id=receiver_group.chat_id,
+            from_chat_id=source_chat.id,
+            message_id=post.message_id,
+        )
+    except telegram.error.BadRequest as bad_request:
+        logger.warning(
+            f'Attempt to forward message to chat {receiver_group.chat_id} failed due to '
+            f'BadRequest error: {bad_request}'
+        )
+    except Exception as exc:
+        logger.exception(f'Unhandled error during attempt ot forward message: {exc}')
+    else:
+        logger.info(
+            f'Successfully forwarded post {post.link} to chat "{receiver_group.title}"'
+        )
+
+
 def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     """Broadcast post from channel to connected groups."""
     logger.debug(f'Post in {update.effective_chat.id} channel.')
-    chat_id = update.effective_chat.id
-    post_id = update.effective_message.message_id
+    post = update.effective_message
+
+    post_tags = set(
+        t for t in settings.POST_TAGS
+        if f'#{t}' in post.text
+    )
 
     with db_session_from_context(context) as db_session:
-        groups_broadcast_to = ReceiverGroup.list_enabled_chat_ids(session=db_session)
+        enabled_groups = list(db_session.query(ReceiverGroup).filter(ReceiverGroup.enabled == True))
 
-    logger.debug(
-        f'Broadcasting post {post_id} '
-        f'to {len(groups_broadcast_to)} group chats.'
-    )
-    for group_id in groups_broadcast_to:
-        try:
-            context.bot.forward_message(
-                chat_id=group_id,
-                from_chat_id=chat_id,
-                message_id=post_id,
-            )
-        except telegram.error.BadRequest as bad_request:
-            logger.warning(
-                f'Attempt to forward message to {group_id} failed due to '
-                f'BadRequest error: {bad_request}'
-            )
-        except Exception as exc:
-            logger.exception(f'Unhandled error during attempt ot forward message:')
-        else:
-            logger.debug(
-                f'Successfully forwarded message {post_id}'
-                f' to chat {group_id}'
-            )
+        # update chat titles for later use
+        for rg in enabled_groups:
+            actual_title = context.bot.get_chat(rg.chat_id)
+            if rg.update_title(actual_title):
+                db_session.add(rg)
+
+        for tag in post_tags:
+            receiver_groups = filter(lambda rg: tag in rg.tags_set, enabled_groups)
+            for rg in receiver_groups:
+                _forward_post(receiver_group=rg, update=update, context=context)

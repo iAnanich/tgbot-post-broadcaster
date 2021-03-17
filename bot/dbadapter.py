@@ -1,6 +1,7 @@
-from typing import Optional
+import logging
+from typing import Optional, Set, Iterable
 
-from sqlalchemy import Column, Integer, BigInteger, Boolean, String
+from sqlalchemy import Column, Integer, BigInteger, Boolean, String, JSON
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
@@ -8,6 +9,14 @@ from sqlalchemy.orm import sessionmaker, Session
 
 from . import settings
 
+# Enable logging
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=settings.LOG_LEVEL,
+)
+logger = logging.getLogger(__name__)
+
+# Init SQLAlchemy base for declarative models
 Base = declarative_base()
 
 
@@ -36,6 +45,7 @@ class ReceiverGroup(Base):
     chat_id = Column(BigInteger, unique=True)
     enabled = Column(Boolean, default=Default.ENABLED)
     title = Column(String(length=255), nullable=True)
+    tags = Column(JSON, default=[])
 
     @property
     def is_enabled(self) -> bool:
@@ -44,6 +54,10 @@ class ReceiverGroup(Base):
     @property
     def is_disabled(self) -> bool:
         return not self.enabled
+
+    @property
+    def tags_set(self) -> Set[str]:
+        return set(self.tags)
 
     @classmethod
     def get_by_chat_id(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup' or None:
@@ -59,6 +73,7 @@ class ReceiverGroup(Base):
         if obj is not None:
             return obj
         new_obj = cls(chat_id=chat_id, title=title)
+        logger.info(f'Creating new {cls.__class__.__name__}#{new_obj.id} for chatID={chat_id}')
         session.add(new_obj)
         return new_obj
 
@@ -76,9 +91,30 @@ class ReceiverGroup(Base):
     def update_title(self, title: str) -> bool:
         if title != self.title:
             self.title = title
+            logger.info(f'Changing title of chatID={self.chat_id}')
             return True
         # if passed old value - do nothing
         return False
+
+    def set_tags(self, tags: Iterable[str]) -> bool:
+        if set(tags) != self.tags_set:
+            self.tags = list(tags)
+            logger.info(f'Changing tags of chatID={self.chat_id}')
+            return True
+        # if passed old value - do nothing
+        return False
+
+    def add_tags(self, tags: Iterable[str]) -> bool:
+        change_to = self.tags_set.union(set(tags))
+        return self.set_tags(tags=change_to)
+
+    def remove_tags(self, tags: Iterable[str]) -> bool:
+        change_to = self.tags_set.difference(set(tags))
+        return self.set_tags(tags=change_to)
+
+    def update_tags(self, tags_to_add: Iterable[str], tags_to_remove: Iterable[str]) -> bool:
+        set_to = self.tags_set.union(set(tags_to_add)).difference(set(tags_to_remove))
+        return self.set_tags(tags=set_to)
 
     def __repr__(self) -> str:
         return f'<ReceiverGroup chat_id={self.chat_id} [{"x" if self.enabled else " "}]>'
@@ -88,6 +124,7 @@ class ReceiverGroup(Base):
             'chat_id': self.chat_id,
             'enabled': self.enabled,
             'title': self.title,
+            'tags': list(self.tags),
         }
         return d
 
@@ -97,6 +134,7 @@ class ReceiverGroup(Base):
             chat_id=d['chat_id'],
             enabled=d.get('enabled', False),
             title=d.get('title', None),
+            tags=d.get('tags', []),
         )
         if session:
             session.add(obj)
