@@ -14,8 +14,11 @@ DB_URI = env.str('DB_URI', default='sqlite:///db.sqlite')
 
 TGBOT_APIKEY = env.str('TGBOT_APIKEY')
 
+AUTOUPDATE_CHAT_TITLES = env.bool('TGBOT_AUTOUPDATE_CHAT_TITLES', default=False)
+
 ADMIN_USERNAMES = env.str('TGBOT_ADMIN_USERNAMES').split(',')
 SOURCE_CHANNEL = env.int('TGBOT_SOURCE_CHANNEL')
+
 POST_REGEX = env.str('TGBOT_POST_REGEX') or ''
 POST_TAGS = frozenset(
     t[1:] if t.startswith('#') else t

@@ -313,10 +313,11 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
         sent_to_chat_ids = set()
 
         # update chat titles for later use
-        for rg in enabled_groups:
-            actual_title = context.bot.get_chat(rg.chat_id)
-            if rg.update_title(actual_title):
-                db_session.add(rg)
+        if settings.AUTOUPDATE_CHAT_TITLES:
+            for rg in enabled_groups:
+                actual_title = context.bot.get_chat(rg.chat_id)
+                if rg.update_title(actual_title):
+                    db_session.add(rg)
 
         for tag in post_tags:
             receiver_groups = filter(lambda rg: tag in rg.tags_set, enabled_groups)
