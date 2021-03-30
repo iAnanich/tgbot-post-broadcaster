@@ -1,4 +1,5 @@
 import logging
+import time
 from contextlib import contextmanager
 
 import telegram
@@ -324,5 +325,9 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
             for rg in receiver_groups:
                 if rg.chat_id in sent_to_chat_ids:
                     continue
+
+                if settings.SLOW_MODE:
+                    time.sleep(settings.SLOW_MODE_DELAY)
+
                 _forward_post(receiver_group=rg, update=update, context=context)
                 sent_to_chat_ids.add(rg.chat_id)

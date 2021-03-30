@@ -14,6 +14,9 @@ DB_URI = env.str('DB_URI', default='sqlite:///db.sqlite')
 
 TGBOT_APIKEY = env.str('TGBOT_APIKEY')
 
+SLOW_MODE = env.bool('TGBOT_SLOW_MODE', default=True)
+SLOW_MODE_DELAY = env.float('TGBOT_SLOW_MODE_DELAY', default=0.1)
+
 AUTOUPDATE_CHAT_TITLES = env.bool('TGBOT_AUTOUPDATE_CHAT_TITLES', default=False)
 
 ADMIN_USERNAMES = env.str('TGBOT_ADMIN_USERNAMES').split(',')
