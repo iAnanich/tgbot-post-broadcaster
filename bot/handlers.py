@@ -305,8 +305,12 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     post = update.effective_message
 
     post_tags = set(
+        post.text[e.offset:e.offset + e.length]
+        for e in post.entities if e.type == 'hashtag'
+    )
+    allowed_post_tags = set(
         t for t in settings.POST_TAGS
-        if f'#{t}' in post.text
+        if f'#{t}' in post_tags
     )
 
     with db_session_from_context(context) as db_session:
@@ -320,7 +324,7 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
                 if rg.update_title(actual_title):
                     db_session.add(rg)
 
-        for tag in post_tags:
+        for tag in allowed_post_tags:
             receiver_groups = filter(lambda rg: tag in rg.tags_set, enabled_groups)
             for rg in receiver_groups:
                 if rg.chat_id in sent_to_chat_ids:
