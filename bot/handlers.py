@@ -1,9 +1,10 @@
 import logging
 import time
 from contextlib import contextmanager
+from typing import Set, Iterable
 
 import telegram
-from telegram import Update
+from telegram import Update, Message
 from telegram.ext import CallbackContext
 
 from . import settings
@@ -299,18 +300,27 @@ def _forward_post(receiver_group: ReceiverGroup, *, update: Update, context: Cal
         )
 
 
+def _extract_hashtags(message: Message, allowed_hashtags: Set[str]) -> Iterable[str]:
+    hashtag_entities = frozenset(filter(lambda e: e.type == 'hashtag', message.entities))
+
+    for e in hashtag_entities:
+        # telegram.messageentity.MessageEntity's offset field is for UTF-16 encoding.
+        # Therefore, we need to apply offset in UTF-16 encoding. But the hashtag itself is OK for UTF-8.
+        # Remove "#" char at the beginning of the entity
+        hashtag = message.text.encode('utf-16')[2 * (e.offset + 1):2 * (e.offset + e.length + 1)].decode('utf-16')[1:]
+        if hashtag not in allowed_hashtags:
+            continue
+        yield hashtag
+
+
 def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     """Broadcast post from channel to connected groups."""
     logger.debug(f'Post in {update.effective_chat.id} channel.')
     post = update.effective_message
 
-    post_tags = set(
-        post.text[e.offset:e.offset + e.length]
-        for e in post.entities if e.type == 'hashtag'
-    )
-    allowed_post_tags = set(
-        t for t in settings.POST_TAGS
-        if f'#{t}' in post_tags
+    broadcast_tags = _extract_hashtags(
+        message=post,
+        allowed_hashtags=settings.POST_TAGS,
     )
 
     with db_session_from_context(context) as db_session:
@@ -324,7 +334,7 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
                 if rg.update_title(actual_title):
                     db_session.add(rg)
 
-        for tag in allowed_post_tags:
+        for tag in broadcast_tags:
             receiver_groups = filter(lambda rg: tag in rg.tags_set, enabled_groups)
             for rg in receiver_groups:
                 if rg.chat_id in sent_to_chat_ids:
