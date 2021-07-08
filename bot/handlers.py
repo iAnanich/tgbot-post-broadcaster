@@ -7,8 +7,7 @@ import telegram
 from telegram import Update, Message
 from telegram.ext import CallbackContext
 
-from . import settings
-from . import storage
+from . import settings, storage
 from .dbadapter import ReceiverGroup
 
 # Enable logging
@@ -236,7 +235,7 @@ def command_tags(update: Update, context: CallbackContext) -> None:
                 db_session.add(rg)
                 reply_md = 'Updated subscription tags to:\n'
                 reply_md += '\n'.join(
-                    f'{i + 1}) #{t}   unsubscribe by copy&pasting _/tags -{t}_' for i, t in enumerate(rg.tags)
+                    f'{i + 1}) `#{t}`' for i, t in enumerate(rg.tags)
                 ) + '\n'
                 if not_allowed_tags:
                     reply_md += 'These tags where provided, but are not allowed:\n'
@@ -249,7 +248,7 @@ def command_tags(update: Update, context: CallbackContext) -> None:
             if rg.tags:
                 reply_md = f'Active subscription tags:\n'
                 reply_md += '\n'.join(
-                    f'{i + 1}) #{t}   unsubscribe by copy&pasting _/tags -{t}_' for i, t in enumerate(rg.tags)
+                    f'{i + 1}) `#{t}`' for i, t in enumerate(rg.tags)
                 ) + '\n'
             else:
                 reply_md = 'No active subscription tags.\n'
@@ -263,8 +262,8 @@ def command_tags(update: Update, context: CallbackContext) -> None:
                 reply_md += 'List of all allowed tags:\n'
             other_tags = list(settings.POST_TAGS.difference(rg.tags_set))
             other_tags.sort()
-            reply_md += '\n'.join(
-                f'~ #{t}   subscribe by copy&pasting _/tags +{t}_' for t in other_tags
+            reply_md += ' '.join(
+                f'`#{t}`' for t in other_tags
             )
 
         # update chat data
