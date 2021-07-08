@@ -222,6 +222,7 @@ def command_tags(update: Update, context: CallbackContext) -> None:
             update.effective_message.reply_text(reply_msg)
             return
 
+        followup_reply_md = ''
         if context.args:
             tags_to_add = set(t[1:] for t in context.args if t.startswith('+'))
             not_allowed_tags = tags_to_add.difference(settings.POST_TAGS)
@@ -235,11 +236,11 @@ def command_tags(update: Update, context: CallbackContext) -> None:
                 db_session.add(rg)
                 reply_md = 'Updated subscription tags to:\n'
                 reply_md += '\n'.join(
-                    f'{i + 1}) `#{t}`' for i, t in enumerate(rg.tags)
+                    f'{i + 1}) `{t}`' for i, t in enumerate(rg.tags)
                 ) + '\n'
                 if not_allowed_tags:
                     reply_md += 'These tags where provided, but are not allowed:\n'
-                    reply_md += '\n'.join(f'~ `{t}`' for t in not_allowed_tags)
+                    reply_md += '`' + ' '.join(f'{t}' for t in not_allowed_tags) + '`'
             elif not_allowed_tags:
                 reply_md = 'All provided tags are not allowed.'
             else:
@@ -248,7 +249,7 @@ def command_tags(update: Update, context: CallbackContext) -> None:
             if rg.tags:
                 reply_md = f'Active subscription tags:\n'
                 reply_md += '\n'.join(
-                    f'{i + 1}) `#{t}`' for i, t in enumerate(rg.tags)
+                    f'{i + 1}) `{t}`' for i, t in enumerate(rg.tags)
                 ) + '\n'
             else:
                 reply_md = 'No active subscription tags.\n'
@@ -256,21 +257,24 @@ def command_tags(update: Update, context: CallbackContext) -> None:
             reply_md += 'To change subscription tags, pass them to this ' + \
                         'command in the following format: `/tags +TagIWantToAdd -TagIWantToRemove`\n'
             reply_md += '\n'
+
             if rg.tags:
-                reply_md += 'List of other allowed tags:\n'
+                followup_reply_md += 'List of other allowed tags:\n'
             else:
-                reply_md += 'List of all allowed tags:\n'
+                followup_reply_md += 'List of all allowed tags:\n'
             other_tags = list(settings.POST_TAGS.difference(rg.tags_set))
             other_tags.sort()
-            reply_md += ' '.join(
-                f'`#{t}`' for t in other_tags
-            )
+            followup_reply_md += '`' + ' '.join(
+                f'{t}' for t in other_tags
+            ) + '`'
 
         # update chat data
         if rg.update_title(title=chat.title):
             db_session.add(rg)
 
-    update.effective_message.reply_markdown(reply_md)
+    reply = update.effective_message.reply_markdown(reply_md)
+    if followup_reply_md:
+        reply.reply_markdown(followup_reply_md)
 
 
 def _forward_post(receiver_group: ReceiverGroup, *, update: Update, context: CallbackContext):
