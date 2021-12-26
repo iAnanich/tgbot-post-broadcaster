@@ -25,8 +25,14 @@ ADMIN_USERNAMES = env.str('TGBOT_ADMIN_USERNAMES').split(',')
 SOURCE_CHANNEL = env.int('TGBOT_SOURCE_CHANNEL')
 
 POST_REGEX = env.str('TGBOT_POST_REGEX') or ''
-POST_TAGS = frozenset(
+POST_EXTENDING_TAGS = frozenset(
     t[1:] if t.startswith('#') else t
-    for t in env.str('TGBOT_POST_TAGS', default='').split(',')
+    for t in env.str('TGBOT_POST_EXTENDING_TAGS', default=env.str('TGBOT_POST_TAGS', default='')).split(',')
     if t
-)
+)  # TODO: deprecate TGBOT_POST_TAGS
+POST_RESTRICTIVE_TAGS = frozenset(
+    t[1:] if t.startswith('#') else t
+    for t in env.str('TGBOT_POST_RESTRICTIVE_TAGS', default='').split(',')
+    if t
+)  # TODO: deprecate support for #t1,#t2 format (# char)
+ALL_TAGS = POST_EXTENDING_TAGS | POST_RESTRICTIVE_TAGS
