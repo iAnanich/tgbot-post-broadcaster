@@ -273,7 +273,7 @@ def command_tags(update: Update, context: CallbackContext) -> None:
             db_session.add(rg)
 
     reply = update.effective_message.reply_markdown(reply_md)
-    if followup_reply_md:
+    if followup_reply_md and settings.DISPLAY_ALL_TAGS:
         reply.reply_markdown(followup_reply_md)
 
 
