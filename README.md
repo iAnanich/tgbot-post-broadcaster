@@ -1,4 +1,4 @@
-# tgbot-post-broadcaster v0.3
+# tgbot-post-broadcaster v0.4
 
 Channel Post Broadcaster Telegram Bot
 
