@@ -321,14 +321,18 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     logger.debug(f'Post in {update.effective_chat.id} channel.')
     post = update.effective_message
 
-    extending_tags = frozenset(_extract_hashtags(
-        message=post,
-        allowed_hashtags=settings.POST_EXTENDING_TAGS,
-    ))
-    restrictive_tags = frozenset(_extract_hashtags(
-        message=post,
-        allowed_hashtags=settings.POST_RESTRICTIVE_TAGS,
-    ))
+    extending_tags = frozenset(
+        t.lower for t in _extract_hashtags(
+            message=post,
+            allowed_hashtags=settings.POST_EXTENDING_TAGS,
+        )
+        )
+    restrictive_tags = frozenset(
+        t.lower for t in _extract_hashtags(
+            message=post,
+            allowed_hashtags=settings.POST_RESTRICTIVE_TAGS,
+        )
+        )
 
     with db_session_from_context(context) as db_session:
         enabled_groups = list(db_session.query(ReceiverGroup).filter(ReceiverGroup.enabled == True))

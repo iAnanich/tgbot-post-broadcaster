@@ -1,8 +1,7 @@
 import logging
 from typing import Optional, Set, Iterable
 
-from sqlalchemy import Column, Integer, BigInteger, Boolean, String, JSON
-from sqlalchemy import create_engine
+from sqlalchemy import Column, Integer, BigInteger, Boolean, String, JSON, create_engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -57,7 +56,7 @@ class ReceiverGroup(Base):
 
     @property
     def tags_set(self) -> Set[str]:
-        return set(self.tags)
+        return set(t.lower() for t in self.tags)
 
     @classmethod
     def get_by_chat_id(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup' or None:
