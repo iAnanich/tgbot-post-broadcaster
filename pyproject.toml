@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "tgbot-member-presence"
-version = "0.4.0"
-description = "Chat Member Presence Telegram Bot"
+name = "tgbot-post-broadcaster"
+version = "0.4.1"
+description = "Post Broadcaster telegram bot"
 authors = ["Illia Ananich <illia.ananich@gmail.com>"]
 
 [tool.poetry.dependencies]
