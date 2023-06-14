@@ -318,8 +318,10 @@ def _extract_hashtags(message: Message, allowed_hashtags: Set[str]) -> Iterable[
 
 def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     """Broadcast post from channel to connected groups."""
-    logger.debug(f'Post in {update.effective_chat.id} channel.')
     post = update.effective_message
+    logger.debug(f'Post #{post.message_id} in {update.effective_chat.id} channel.')
+
+    forwards: int = 0
 
     extending_tags = frozenset(
         t.lower() for t in _extract_hashtags(
@@ -352,4 +354,10 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
             if settings.SLOW_MODE:
                 time.sleep(settings.SLOW_MODE_DELAY)
 
+            forwards += 1
             _forward_post(receiver_group=rg, update=update, context=context)
+
+    if forwards > 0:
+        logger.info(f'Post #{post.message_id} from {update.effective_chat.id} channel forwarded into {forwards} chats.')
+    else:
+        logger.info(f'Received post #{post.message_id} from {update.effective_chat.id} channel was not forwarded anywhere!')
