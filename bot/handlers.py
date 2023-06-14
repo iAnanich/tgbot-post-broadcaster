@@ -295,6 +295,8 @@ def _forward_post(receiver_group: ReceiverGroup, *, update: Update, context: Cal
             f'Attempt to forward message to chat {receiver_group.chat_id} failed due to '
             f'BadRequest error: {bad_request}'
         )
+    except telegram.error.ChatMigrated as e:
+        logger.error(f'Chat {receiver_group.title} with tags {receiver_group.tags} got migrated: {e}')
     except Exception as exc:
         logger.exception(f'Unhandled error during attempt ot forward message: {exc}')
     else:
