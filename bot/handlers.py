@@ -325,10 +325,10 @@ def _extract_hashtags(message: Message, allowed_hashtags: Set[str]) -> Iterable[
         # telegram.messageentity.MessageEntity's offset field is for UTF-16 encoding.
         # Therefore, we need to apply offset in UTF-16 encoding. But the hashtag itself is OK for UTF-8.
         # Remove "#" char at the beginning of the entity.
-        hashtag = text.encode('utf-16')[2 * (e.offset + 1):2 * (e.offset + e.length + 1)].decode('utf-16')[1:]
+        hashtag = text.encode('utf-16')[2 * (e.offset + 1):2 * (e.offset + e.length + 1)].decode('utf-16')[1:].lower()
         if hashtag not in allowed_hashtags:
             continue
-        yield hashtag.lower()
+        yield hashtag
 
 
 def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
