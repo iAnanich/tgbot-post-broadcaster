@@ -13,8 +13,8 @@ Supported features:
 * optional tags separation by extension / restriction function
 * optional slow mode delay
 * optional auto-update of chat's titles when handling new post
-* forward text post or photo with caption
-* can reply to received post in the source channel
+* forward text post or single (not album/group) media with caption
+* optional reply to received post in the source channel
 * tags are case-insensitive
 
 Planned features:
