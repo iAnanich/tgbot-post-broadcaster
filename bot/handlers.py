@@ -312,12 +312,16 @@ def _forward_post(receiver_group: ReceiverGroup, *, update: Update, context: Cal
 
 
 def _extract_hashtags(message: Message, allowed_hashtags: Set[str]) -> Iterable[str]:
-    if message.photo:
+    if message.text and not message.caption:
+        text = message.text
+        entities = message.entities
+    elif message.caption and not message.text:
         text = message.caption
         entities = message.caption_entities
     else:
-        text = message.text
-        entities = message.entities
+        # not implemented
+        # potentially there could be a need to implement this for Polls
+        return
 
     hashtag_entities = frozenset(filter(lambda e: e.type == 'hashtag', entities))
 
