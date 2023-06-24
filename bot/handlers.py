@@ -328,7 +328,7 @@ def _extract_hashtags(message: Message, allowed_hashtags: Set[str]) -> Iterable[
         hashtag = text.encode('utf-16')[2 * (e.offset + 1):2 * (e.offset + e.length + 1)].decode('utf-16')[1:]
         if hashtag not in allowed_hashtags:
             continue
-        yield hashtag
+        yield hashtag.lower()
 
 
 def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
