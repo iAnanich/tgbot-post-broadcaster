@@ -10,6 +10,12 @@ from telegram.ext import CallbackContext
 from . import settings, storage
 from .dbadapter import ReceiverGroup
 
+# TODO: Use latest libversion
+# TODO: use async syntax
+# TODO: log info into separate group
+# TODO: command to send post with specific tags
+# TODO: forward album (media group) https://chat.openai.com/c/8a492d0b-1f78-4ad2-9eac-38fbaafa1f73
+
 # Enable logging
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -306,13 +312,20 @@ def _forward_post(receiver_group: ReceiverGroup, *, update: Update, context: Cal
 
 
 def _extract_hashtags(message: Message, allowed_hashtags: Set[str]) -> Iterable[str]:
-    hashtag_entities = frozenset(filter(lambda e: e.type == 'hashtag', message.entities))
+    if message.photo:
+        text = message.caption
+        entities = message.caption_entities
+    else:
+        text = message.text
+        entities = message.entities
+
+    hashtag_entities = frozenset(filter(lambda e: e.type == 'hashtag', entities))
 
     for e in hashtag_entities:
         # telegram.messageentity.MessageEntity's offset field is for UTF-16 encoding.
         # Therefore, we need to apply offset in UTF-16 encoding. But the hashtag itself is OK for UTF-8.
-        # Remove "#" char at the beginning of the entity
-        hashtag = message.text.encode('utf-16')[2 * (e.offset + 1):2 * (e.offset + e.length + 1)].decode('utf-16')[1:]
+        # Remove "#" char at the beginning of the entity.
+        hashtag = text.encode('utf-16')[2 * (e.offset + 1):2 * (e.offset + e.length + 1)].decode('utf-16')[1:]
         if hashtag not in allowed_hashtags:
             continue
         yield hashtag
@@ -338,6 +351,11 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
         )
         )
 
+    logger.debug(
+        f'Post #{post.message_id} in {update.effective_chat.id} channel contains: '
+        f'extending=[{",".join(extending_tags)}], restrictive=[{restrictive_tags}]'
+    )
+
     with db_session_from_context(context) as db_session:
         enabled_groups = list(db_session.query(ReceiverGroup).filter(ReceiverGroup.enabled == True))
 
@@ -360,6 +378,13 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
             _forward_post(receiver_group=rg, update=update, context=context)
 
     if forwards > 0:
-        logger.info(f'Post #{post.message_id} from {update.effective_chat.id} channel forwarded into {forwards} chats.')
+        # TODO: display exact chat titles.
+        conclusion_log_msg = f'Post #{post.message_id} from {update.effective_chat.id} channel forwarded into {forwards} chats.'
     else:
-        logger.info(f'Received post #{post.message_id} from {update.effective_chat.id} channel was not forwarded anywhere!')
+        conclusion_log_msg = (
+            f'Received post #{post.message_id} from {update.effective_chat.id} channel was not forwarded anywhere! '
+            f'Detected tags: extending=[{",".join(extending_tags)}] '
+            f'restrictive=[{",".join(restrictive_tags)}]'
+        )
+    logger.info(conclusion_log_msg)
+    post.reply_text(conclusion_log_msg)
