@@ -1,7 +1,7 @@
 import logging
 import time
 from contextlib import contextmanager
-from typing import Set, Iterable
+from typing import Set, Iterable, List
 
 import telegram
 from telegram import Update, Message
@@ -338,9 +338,9 @@ def _extract_hashtags(message: Message, allowed_hashtags: Set[str]) -> Iterable[
 def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     """Broadcast post from channel to connected groups."""
     post = update.effective_message
-    logger.debug(f'Post #{post.message_id} in {update.effective_chat.id} channel.')
+    logger.debug(f'Post #{post.message_id} in "{update.effective_chat.title}" #{update.effective_chat.id} channel.')
 
-    forwards: int = 0
+    forwarded_to: List[List[ReceiverGroup, str]] = []
 
     extending_tags = frozenset(
         t.lower() for t in _extract_hashtags(
@@ -356,7 +356,7 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
         )
 
     logger.debug(
-        f'Post #{post.message_id} in {update.effective_chat.id} channel contains: '
+        f'Post #{post.message_id} in "{update.effective_chat.title}" #{update.effective_chat.id} channel contains: '
         f'extending=[{",".join(extending_tags)}], restrictive=[{restrictive_tags}]'
     )
 
@@ -378,17 +378,20 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
             if settings.SLOW_MODE:
                 time.sleep(settings.SLOW_MODE_DELAY)
 
-            forwards += 1
             _forward_post(receiver_group=rg, update=update, context=context)
+            forwarded_to.append([rg, f'"{rg.title}"#{rg.chat_id}'])
 
-    if forwards > 0:
-        # TODO: display exact chat titles.
-        conclusion_log_msg = f'Post #{post.message_id} from {update.effective_chat.id} channel forwarded into {forwards} chats.'
+    if len(forwarded_to) > 0:
+        forwarded_to_str = " , ".join(s for _, s in forwarded_to)
+        conclusion_log_msg = (
+            f'Post #{post.message_id} from "{update.effective_chat.title}" #{update.effective_chat.id} '
+            f'channel forwarded into {len(forwarded_to)} chat(s): {forwarded_to_str}'
+        )
     else:
         conclusion_log_msg = (
-            f'Received post #{post.message_id} from {update.effective_chat.id} channel was not forwarded anywhere! '
-            f'Detected tags: extending=[{",".join(extending_tags)}] '
-            f'restrictive=[{",".join(restrictive_tags)}]'
+            f'Received post #{post.message_id} from "{update.effective_chat.title}" #{update.effective_chat.id} '
+            f'channel was not forwarded anywhere!'
+            f'Detected tags: extending=[{",".join(extending_tags)}] restrictive=[{",".join(restrictive_tags)}]'
         )
     logger.info(conclusion_log_msg)
     if settings.LOG_REPLIES:
