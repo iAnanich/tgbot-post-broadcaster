@@ -14,6 +14,7 @@ Supported features:
 * optional tags separation by extension / restriction function
 * optional slow mode delay
 * optional auto-update of chat's titles when handling new post
+* forward text post or photo with caption
 
 Planned features:
 

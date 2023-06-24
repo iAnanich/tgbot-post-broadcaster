@@ -1,6 +1,22 @@
 import os
+from typing import FrozenSet, List
 
 import environ
+
+
+def parse_tags(tags_string: str) -> FrozenSet[str]:
+    splitted: List[str] = tags_string.split(',')
+    # remove empty items
+    tags = (
+        # TODO: deprecate support for #t1,#t2 format (# char)
+        t[1:] if t.startswith('#') else t
+        for t in splitted
+        if t
+    )
+    # to lower
+    tags = (t.lower() for t in tags)
+    return frozenset(tags)
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ENV_FILE = os.path.join(BASE_DIR, '.env')
@@ -25,14 +41,6 @@ ADMIN_USERNAMES = env.str('TGBOT_ADMIN_USERNAMES').split(',')
 SOURCE_CHANNEL = env.int('TGBOT_SOURCE_CHANNEL')
 
 POST_REGEX = env.str('TGBOT_POST_REGEX') or ''
-POST_EXTENDING_TAGS = frozenset(
-    t[1:] if t.startswith('#') else t
-    for t in env.str('TGBOT_POST_EXTENDING_TAGS', default=env.str('TGBOT_POST_TAGS', default='')).split(',')
-    if t
-)  # TODO: deprecate TGBOT_POST_TAGS
-POST_RESTRICTIVE_TAGS = frozenset(
-    t[1:] if t.startswith('#') else t
-    for t in env.str('TGBOT_POST_RESTRICTIVE_TAGS', default='').split(',')
-    if t
-)  # TODO: deprecate support for #t1,#t2 format (# char)
+POST_EXTENDING_TAGS = parse_tags(env.str('TGBOT_POST_EXTENDING_TAGS', default=env.str('TGBOT_POST_TAGS', default='')))  # TODO: deprecate TGBOT_POST_TAGS
+POST_RESTRICTIVE_TAGS = parse_tags(env.str('TGBOT_POST_RESTRICTIVE_TAGS', default=''))
 ALL_TAGS = POST_EXTENDING_TAGS | POST_RESTRICTIVE_TAGS
