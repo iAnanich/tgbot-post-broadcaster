@@ -225,11 +225,11 @@ def command_tags(update: Update, context: CallbackContext) -> None:
         followup_reply_md = ''
         if context.args:
             tags_to_add = set(t[1:] for t in context.args if t.startswith('+'))
-            not_allowed_tags = tags_to_add.difference(settings.POST_TAGS)
+            not_allowed_tags = tags_to_add.difference(settings.ALL_TAGS)
             tags_to_remove = set(t[1:] for t in context.args if t.startswith('-'))
 
             tags_changed = rg.update_tags(
-                tags_to_add=tags_to_add.intersection(settings.POST_TAGS),
+                tags_to_add=tags_to_add.intersection(settings.ALL_TAGS),
                 tags_to_remove=tags_to_remove,
             )
             if tags_changed:
@@ -262,7 +262,7 @@ def command_tags(update: Update, context: CallbackContext) -> None:
                 followup_reply_md += 'List of other allowed tags:\n'
             else:
                 followup_reply_md += 'List of all allowed tags:\n'
-            other_tags = list(settings.POST_TAGS.difference(rg.tags_set))
+            other_tags = list(settings.ALL_TAGS.difference(rg.tags_set))
             other_tags.sort()
             followup_reply_md += '`' + ' '.join(
                 f'{t}' for t in other_tags
@@ -273,7 +273,7 @@ def command_tags(update: Update, context: CallbackContext) -> None:
             db_session.add(rg)
 
     reply = update.effective_message.reply_markdown(reply_md)
-    if followup_reply_md:
+    if followup_reply_md and settings.DISPLAY_ALL_TAGS:
         reply.reply_markdown(followup_reply_md)
 
 
@@ -321,14 +321,21 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     logger.debug(f'Post in {update.effective_chat.id} channel.')
     post = update.effective_message
 
-    broadcast_tags = _extract_hashtags(
-        message=post,
-        allowed_hashtags=settings.POST_TAGS,
-    )
+    extending_tags = frozenset(
+        t.lower() for t in _extract_hashtags(
+            message=post,
+            allowed_hashtags=settings.POST_EXTENDING_TAGS,
+        )
+        )
+    restrictive_tags = frozenset(
+        t.lower() for t in _extract_hashtags(
+            message=post,
+            allowed_hashtags=settings.POST_RESTRICTIVE_TAGS,
+        )
+        )
 
     with db_session_from_context(context) as db_session:
         enabled_groups = list(db_session.query(ReceiverGroup).filter(ReceiverGroup.enabled == True))
-        sent_to_chat_ids = set()
 
         # update chat titles for later use
         if settings.AUTOUPDATE_CHAT_TITLES:
@@ -337,14 +344,12 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
                 if rg.update_title(actual_title):
                     db_session.add(rg)
 
-        for tag in broadcast_tags:
-            receiver_groups = filter(lambda rg: tag in rg.tags_set, enabled_groups)
-            for rg in receiver_groups:
-                if rg.chat_id in sent_to_chat_ids:
-                    continue
+        filtered_receiver_groups = (
+            rg for rg in enabled_groups
+            if restrictive_tags <= rg.tags_set and extending_tags & rg.tags_set
+        )
+        for rg in filtered_receiver_groups:
+            if settings.SLOW_MODE:
+                time.sleep(settings.SLOW_MODE_DELAY)
 
-                if settings.SLOW_MODE:
-                    time.sleep(settings.SLOW_MODE_DELAY)
-
-                _forward_post(receiver_group=rg, update=update, context=context)
-                sent_to_chat_ids.add(rg.chat_id)
+            _forward_post(receiver_group=rg, update=update, context=context)

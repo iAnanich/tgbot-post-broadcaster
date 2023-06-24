@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "tgbot-member-presence"
-version = "0.3.0"
-description = "Chat Member Presence Telegram Bot"
+name = "tgbot-post-broadcaster"
+version = "0.4.1"
+description = "Post Broadcaster telegram bot"
 authors = ["Illia Ananich <illia.ananich@gmail.com>"]
 
 [tool.poetry.dependencies]
@@ -9,7 +9,7 @@ python = "^3.8"
 python-telegram-bot = "^13.3"
 django-environ = "^0.4.5"
 SQLAlchemy = "^1.3.23"
-psycopg2 = "^2.8.6"
+psycopg2-binary = "^2.9.2"
 
 [tool.poetry.dev-dependencies]
 
