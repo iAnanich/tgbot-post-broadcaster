@@ -15,9 +15,11 @@ Supported features:
 * optional auto-update of chat's titles when handling new post
 * forward text post or photo with caption
 * can reply to received post in the source channel
+* tags are case-insensitive
 
 Planned features:
 
+* forwarding media albums
 * support for multiple sources (sender) channels.
 * configurable channels for sourcing posts.
 
