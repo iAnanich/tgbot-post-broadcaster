@@ -39,6 +39,7 @@ DISPLAY_ALL_TAGS = env.bool('TGBOT_DISPLAY_ALL_TAGS', default=False)
 
 ADMIN_USERNAMES = env.str('TGBOT_ADMIN_USERNAMES').split(',')
 SOURCE_CHANNEL = env.int('TGBOT_SOURCE_CHANNEL')
+LOG_REPLIES = env.bool('TGBOT_LOG_REPLIES', default=False)
 
 POST_EXTENDING_TAGS = parse_tags(env.str('TGBOT_POST_EXTENDING_TAGS', default=env.str('TGBOT_POST_TAGS', default='')))  # TODO: deprecate TGBOT_POST_TAGS
 POST_RESTRICTIVE_TAGS = parse_tags(env.str('TGBOT_POST_RESTRICTIVE_TAGS', default=''))

@@ -387,4 +387,5 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
             f'restrictive=[{",".join(restrictive_tags)}]'
         )
     logger.info(conclusion_log_msg)
-    post.reply_text(conclusion_log_msg)
+    if settings.LOG_REPLIES:
+        post.reply_text(f'Bot log message\n-- -- --\n{conclusion_log_msg}')
