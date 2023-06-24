@@ -9,7 +9,6 @@ mode enabled.
 
 Supported features:
 
-* optional regex for determining if post should be processed by the bot
 * case-insensitive tags
 * optional tags separation by extension / restriction function
 * optional slow mode delay
