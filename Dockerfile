@@ -5,7 +5,7 @@
 # (not the best, but it's a good bootstrap)
 
 
-FROM python:3.8-slim as python
+FROM python:3.10-slim as python
 
 ENV PYTHONUNBUFFERED=true
 
