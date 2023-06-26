@@ -2,8 +2,8 @@ from bot import dbadapter
 
 
 class BotData:
-    DB_SESSION = 'db_session'
-    DB_SESSION_MAKER = 'db_session_maker'
+    DB_SESSION = "db_session"
+    DB_SESSION_MAKER = "db_session_maker"
 
     @classmethod
     def get_db_session(cls, bot_data: dict) -> dbadapter.Session:

@@ -10,20 +10,19 @@ from telegram.ext import CallbackContext
 from . import settings, storage
 from .dbadapter import ReceiverGroup
 
-# TODO: Use latest libversion
-# TODO: use async syntax
-# TODO: log info into separate group
-# TODO: command to send post with specific tags
-# TODO: forward album (media group) https://chat.openai.com/c/8a492d0b-1f78-4ad2-9eac-38fbaafa1f73
+# TODO: Use latest python-telegram-bot version; Use async syntax
+# TODO: command to send post with specific tags ?
+#       (questionable, because embedding tags into post allows to filter/find posts inside receiver groups themselves)
+# TODO: forward album (media group)
 
 # Enable logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=settings.LOG_LEVEL,
 )
 logger = logging.getLogger(__name__)
 
-HELP = '''
+HELP = """
 Post Broadcaster Bot is dedicated to sharing posts from channels with multiple groups.
 
 Add bot to group chat and use /start command.
@@ -35,7 +34,7 @@ Other commands:
 /status - display group chat status
 /tags - modify tag subscriptions
 /help - display this message
-'''
+"""
 
 
 @contextmanager
@@ -46,7 +45,7 @@ def db_session_from_context(context: CallbackContext):
         yield session
         session.commit()
     except Exception as exc:
-        logger.exception(f'Unexpected error in attempt to commit session: ')
+        logger.exception(f"Unexpected error in attempt to commit session: ")
         session.rollback()
         raise
     finally:
@@ -56,12 +55,16 @@ def db_session_from_context(context: CallbackContext):
 # Bot commands
 # ============
 
+
 def command_start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
     if update.effective_chat.type == update.effective_chat.PRIVATE:
         update.message.reply_text(HELP)
-    elif update.effective_chat.type in {update.effective_chat.GROUP, update.effective_chat.SUPERGROUP}:
-        logger.debug(f'Command /start from {update.effective_chat.id} chat.')
+    elif update.effective_chat.type in {
+        update.effective_chat.GROUP,
+        update.effective_chat.SUPERGROUP,
+    }:
+        logger.debug(f"Command /start from {update.effective_chat.id} chat.")
         chat = update.effective_chat
 
         with db_session_from_context(context) as db_session:
@@ -71,11 +74,11 @@ def command_start(update: Update, context: CallbackContext) -> None:
                 session=db_session,
             )
             if rg.enabled:
-                reply_msg = 'Post broadcasting already enabled.'
+                reply_msg = "Post broadcasting already enabled."
             else:
                 reply_msg = (
-                    'Greetings!\n'
-                    'Use command /enable to enable post broadcasting to this group chat.'
+                    "Greetings!\n"
+                    "Use command /enable to enable post broadcasting to this group chat."
                 )
 
         update.message.reply_text(reply_msg)
@@ -88,13 +91,13 @@ def command_help(update: Update, context: CallbackContext) -> None:
 
 def command_debug(update: Update, context: CallbackContext) -> None:
     """Display debug info."""
-    logger.debug(f'Command /debug from {update.effective_chat.id} chat.')
+    logger.debug(f"Command /debug from {update.effective_chat.id} chat.")
     chat = update.effective_chat
 
     reply_md = (
-        f'Chat ID: `{chat.id}`\n'
-        f'Chat type: `{chat.type}`\n'
-        f'Chat title: `{chat.title}`\n'
+        f"Chat ID: `{chat.id}`\n"
+        f"Chat type: `{chat.type}`\n"
+        f"Chat title: `{chat.title}`\n"
     )
     if chat.type in {chat.GROUP, chat.SUPERGROUP}:
         try:
@@ -106,18 +109,18 @@ def command_debug(update: Update, context: CallbackContext) -> None:
                 rg: ReceiverGroup
                 is_enabled = rg.enabled
         except Exception as exc:
-            reply_md += f'Could not retrieve group chat data.'
+            reply_md += f"Could not retrieve group chat data."
         else:
             if rg:
-                reply_md += f'Broadcasting enabled: `{is_enabled}`\n'
+                reply_md += f"Broadcasting enabled: `{is_enabled}`\n"
             else:
-                reply_md += f'No data for this group chat.'
+                reply_md += f"No data for this group chat."
 
     update.message.reply_markdown(reply_md)
 
 
 def command_status(update: Update, context: CallbackContext) -> None:
-    logger.debug(f'Command /status from {update.effective_chat.id} chat.')
+    logger.debug(f"Command /status from {update.effective_chat.id} chat.")
     chat = update.effective_chat
 
     with db_session_from_context(context) as db_session:
@@ -128,26 +131,30 @@ def command_status(update: Update, context: CallbackContext) -> None:
         rg: ReceiverGroup
 
         if not rg:
-            reply_md = 'Use command /start to initialize the bot.'
+            reply_md = "Use command /start to initialize the bot."
         else:
             # Enabled/disabled
             if rg.enabled:
                 reply_md = (
-                    'Broadcasting to this group chat is enabled.\n'
-                    'Use command /disable to disable it.\n'
+                    "Broadcasting to this group chat is enabled.\n"
+                    "Use command /disable to disable it.\n"
                 )
             else:
                 reply_md = (
-                    'Broadcasting to this group chat is disabled.\n'
-                    'Use command /enable to enable it.\n'
+                    "Broadcasting to this group chat is disabled.\n"
+                    "Use command /enable to enable it.\n"
                 )
 
             # Tag subscriptions
             if rg.tags:
-                reply_md += f'\nSubscribed to tags: ' + ' '.join(f'#{t}' for t in rg.tags) + '\n'
+                reply_md += (
+                    f"\nSubscribed to tags: "
+                    + " ".join(f"#{t}" for t in rg.tags)
+                    + "\n"
+                )
             else:
-                reply_md += '\nNo active subscriptions.'
-            reply_md += 'Use command /tags to manage tag subscriptions.'
+                reply_md += "\nNo active subscriptions."
+            reply_md += "Use command /tags to manage tag subscriptions."
 
             # update chat data
             if rg.update_title(title=chat.title):
@@ -158,7 +165,7 @@ def command_status(update: Update, context: CallbackContext) -> None:
 
 def command_enable(update: Update, context: CallbackContext) -> None:
     """Connect current group to channel via it's short name."""
-    logger.debug(f'Command /enable from {update.effective_chat.id} chat.')
+    logger.debug(f"Command /enable from {update.effective_chat.id} chat.")
     chat = update.effective_chat
 
     with db_session_from_context(context) as db_session:
@@ -168,14 +175,14 @@ def command_enable(update: Update, context: CallbackContext) -> None:
         )
         rg: ReceiverGroup
         if not rg:
-            reply_msg = 'Use command /start first.'
+            reply_msg = "Use command /start first."
         else:
             if rg.is_enabled:
-                reply_msg = 'Broadcasting to this group chat already enabled.'
+                reply_msg = "Broadcasting to this group chat already enabled."
             else:
                 rg.enable()
                 db_session.add(rg)
-                reply_msg = 'Broadcasting to this group chat successfully enabled.'
+                reply_msg = "Broadcasting to this group chat successfully enabled."
 
             # update chat data
             if rg.update_title(title=chat.title):
@@ -186,7 +193,7 @@ def command_enable(update: Update, context: CallbackContext) -> None:
 
 def command_disable(update: Update, context: CallbackContext) -> None:
     """Disable broadcasting to current group from channel."""
-    logger.debug(f'Command /disable from {update.effective_chat.id} chat.')
+    logger.debug(f"Command /disable from {update.effective_chat.id} chat.")
     chat = update.effective_chat
 
     with db_session_from_context(context) as db_session:
@@ -196,14 +203,14 @@ def command_disable(update: Update, context: CallbackContext) -> None:
         )
         rg: ReceiverGroup
         if not rg:
-            reply_msg = 'Use command /start first.'
+            reply_msg = "Use command /start first."
         else:
             if rg.is_disabled:
-                reply_msg = 'Broadcasting to this group chat already disabled.'
+                reply_msg = "Broadcasting to this group chat already disabled."
             else:
                 rg.disable()
                 db_session.add(rg)
-                reply_msg = 'Broadcasting to this group chat successfully disabled.'
+                reply_msg = "Broadcasting to this group chat successfully disabled."
 
             # update chat data
             if rg.update_title(title=chat.title):
@@ -214,7 +221,7 @@ def command_disable(update: Update, context: CallbackContext) -> None:
 
 def command_tags(update: Update, context: CallbackContext) -> None:
     """Manage group chat tags."""
-    logger.debug(f'Command /tags from {update.effective_chat.id} chat.')
+    logger.debug(f"Command /tags from {update.effective_chat.id} chat.")
     chat = update.effective_chat
 
     with db_session_from_context(context) as db_session:
@@ -224,15 +231,15 @@ def command_tags(update: Update, context: CallbackContext) -> None:
         )
         rg: ReceiverGroup
         if not rg:
-            reply_msg = 'Use command /start first.'
+            reply_msg = "Use command /start first."
             update.effective_message.reply_text(reply_msg)
             return
 
-        followup_reply_md = ''
+        followup_reply_md = ""
         if context.args:
-            tags_to_add = set(t[1:] for t in context.args if t.startswith('+'))
+            tags_to_add = set(t[1:] for t in context.args if t.startswith("+"))
             not_allowed_tags = tags_to_add.difference(settings.ALL_TAGS)
-            tags_to_remove = set(t[1:] for t in context.args if t.startswith('-'))
+            tags_to_remove = set(t[1:] for t in context.args if t.startswith("-"))
 
             tags_changed = rg.update_tags(
                 tags_to_add=tags_to_add.intersection(settings.ALL_TAGS),
@@ -240,39 +247,39 @@ def command_tags(update: Update, context: CallbackContext) -> None:
             )
             if tags_changed:
                 db_session.add(rg)
-                reply_md = 'Updated subscription tags to:\n'
-                reply_md += '\n'.join(
-                    f'{i + 1}) `{t}`' for i, t in enumerate(rg.tags)
-                ) + '\n'
+                reply_md = "Updated subscription tags to:\n"
+                reply_md += (
+                    "\n".join(f"{i + 1}) `{t}`" for i, t in enumerate(rg.tags)) + "\n"
+                )
                 if not_allowed_tags:
-                    reply_md += 'These tags where provided, but are not allowed:\n'
-                    reply_md += '`' + ' '.join(f'{t}' for t in not_allowed_tags) + '`'
+                    reply_md += "These tags where provided, but are not allowed:\n"
+                    reply_md += "`" + " ".join(f"{t}" for t in not_allowed_tags) + "`"
             elif not_allowed_tags:
-                reply_md = 'All provided tags are not allowed.'
+                reply_md = "All provided tags are not allowed."
             else:
-                reply_md = 'No changes detected.'
+                reply_md = "No changes detected."
         else:
             if rg.tags:
-                reply_md = f'Active subscription tags:\n'
-                reply_md += '\n'.join(
-                    f'{i + 1}) `{t}`' for i, t in enumerate(rg.tags)
-                ) + '\n'
+                reply_md = f"Active subscription tags:\n"
+                reply_md += (
+                    "\n".join(f"{i + 1}) `{t}`" for i, t in enumerate(rg.tags)) + "\n"
+                )
             else:
-                reply_md = 'No active subscription tags.\n'
-            reply_md += '\n'
-            reply_md += 'To change subscription tags, pass them to this ' + \
-                        'command in the following format: `/tags +TagIWantToAdd -TagIWantToRemove`\n'
-            reply_md += '\n'
+                reply_md = "No active subscription tags.\n"
+            reply_md += "\n"
+            reply_md += (
+                "To change subscription tags, pass them to this "
+                + "command in the following format: `/tags +TagIWantToAdd -TagIWantToRemove`\n"
+            )
+            reply_md += "\n"
 
             if rg.tags:
-                followup_reply_md += 'List of other allowed tags:\n'
+                followup_reply_md += "List of other allowed tags:\n"
             else:
-                followup_reply_md += 'List of all allowed tags:\n'
+                followup_reply_md += "List of all allowed tags:\n"
             other_tags = list(settings.ALL_TAGS.difference(rg.tags_set))
             other_tags.sort()
-            followup_reply_md += '`' + ' '.join(
-                f'{t}' for t in other_tags
-            ) + '`'
+            followup_reply_md += "`" + " ".join(f"{t}" for t in other_tags) + "`"
 
         # update chat data
         if rg.update_title(title=chat.title):
@@ -283,11 +290,13 @@ def command_tags(update: Update, context: CallbackContext) -> None:
         reply.reply_markdown(followup_reply_md)
 
 
-def _forward_post(receiver_group: ReceiverGroup, *, update: Update, context: CallbackContext):
+def _forward_post(
+    receiver_group: ReceiverGroup, *, update: Update, context: CallbackContext
+):
     source_chat = update.effective_chat
     post = update.effective_message
     logger.debug(
-        f'Preparing to forward message {source_chat.id}/{post.message_id} '
+        f"Preparing to forward message {source_chat.id}/{post.message_id} "
         f'to chat {receiver_group.chat_id} "{receiver_group.title}"'
     )
     try:
@@ -298,13 +307,15 @@ def _forward_post(receiver_group: ReceiverGroup, *, update: Update, context: Cal
         )
     except telegram.error.BadRequest as bad_request:
         logger.warning(
-            f'Attempt to forward message to chat {receiver_group.chat_id} failed due to '
-            f'BadRequest error: {bad_request}'
+            f"Attempt to forward message to chat {receiver_group.chat_id} failed due to "
+            f"BadRequest error: {bad_request}"
         )
     except telegram.error.ChatMigrated as e:
-        logger.error(f'Chat {receiver_group.title} with tags {receiver_group.tags} got migrated: {e}')
+        logger.error(
+            f"Chat {receiver_group.title} with tags {receiver_group.tags} got migrated: {e}"
+        )
     except Exception as exc:
-        logger.exception(f'Unhandled error during attempt ot forward message: {exc}')
+        logger.exception(f"Unhandled error during attempt ot forward message: {exc}")
     else:
         logger.info(
             f'Successfully forwarded post {post.link} to chat "{receiver_group.title}"'
@@ -323,13 +334,17 @@ def _extract_hashtags(message: Message, allowed_hashtags: Set[str]) -> Iterable[
         # potentially there could be a need to implement this for Polls
         return
 
-    hashtag_entities = frozenset(filter(lambda e: e.type == 'hashtag', entities))
+    hashtag_entities = frozenset(filter(lambda e: e.type == "hashtag", entities))
 
     for e in hashtag_entities:
         # telegram.messageentity.MessageEntity's offset field is for UTF-16 encoding.
         # Therefore, we need to apply offset in UTF-16 encoding. But the hashtag itself is OK for UTF-8.
         # Remove "#" char at the beginning of the entity.
-        hashtag = text.encode('utf-16')[2 * (e.offset + 1):2 * (e.offset + e.length + 1)].decode('utf-16')[1:].lower()
+        hashtag = (
+            text.encode("utf-16")[2 * (e.offset + 1) : 2 * (e.offset + e.length + 1)]
+            .decode("utf-16")[1:]
+            .lower()
+        )
         if hashtag not in allowed_hashtags:
             continue
         yield hashtag
@@ -338,22 +353,26 @@ def _extract_hashtags(message: Message, allowed_hashtags: Set[str]) -> Iterable[
 def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     """Broadcast post from channel to connected groups."""
     post = update.effective_message
-    logger.debug(f'Post #{post.message_id} in "{update.effective_chat.title}" #{update.effective_chat.id} channel.')
+    logger.debug(
+        f'Post #{post.message_id} in "{update.effective_chat.title}" #{update.effective_chat.id} channel.'
+    )
 
     forwarded_to: List[List[ReceiverGroup, str]] = []
 
     extending_tags = frozenset(
-        t.lower() for t in _extract_hashtags(
+        t.lower()
+        for t in _extract_hashtags(
             message=post,
             allowed_hashtags=settings.POST_EXTENDING_TAGS,
         )
-        )
+    )
     restrictive_tags = frozenset(
-        t.lower() for t in _extract_hashtags(
+        t.lower()
+        for t in _extract_hashtags(
             message=post,
             allowed_hashtags=settings.POST_RESTRICTIVE_TAGS,
         )
-        )
+    )
 
     logger.debug(
         f'Post #{post.message_id} in "{update.effective_chat.title}" #{update.effective_chat.id} channel contains: '
@@ -361,7 +380,9 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     )
 
     with db_session_from_context(context) as db_session:
-        enabled_groups = list(db_session.query(ReceiverGroup).filter(ReceiverGroup.enabled == True))
+        enabled_groups = list(
+            db_session.query(ReceiverGroup).filter(ReceiverGroup.enabled == True)
+        )
 
         # update chat titles for later use
         if settings.AUTOUPDATE_CHAT_TITLES:
@@ -371,7 +392,8 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
                     db_session.add(rg)
 
         filtered_receiver_groups = (
-            rg for rg in enabled_groups
+            rg
+            for rg in enabled_groups
             if restrictive_tags <= rg.tags_set and extending_tags & rg.tags_set
         )
         for rg in filtered_receiver_groups:
@@ -381,19 +403,19 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
             _forward_post(receiver_group=rg, update=update, context=context)
             forwarded_to.append([rg, f'"{rg.title}"#{rg.chat_id}'])
 
-    # TODO: separately make message for TG
+    # TODO: separately сompose message for TG
     if len(forwarded_to) > 0:
         forwarded_to_str = " , ".join(s for _, s in forwarded_to)
         conclusion_log_msg = (
             f'Post #{post.message_id} from "{update.effective_chat.title}" #{update.effective_chat.id} '
-            f'channel forwarded into {len(forwarded_to)} chat(s): {forwarded_to_str}'
+            f"channel forwarded into {len(forwarded_to)} chat(s): {forwarded_to_str}"
         )
     else:
         conclusion_log_msg = (
             f'Received post #{post.message_id} from "{update.effective_chat.title}" #{update.effective_chat.id} '
-            f'channel was not forwarded anywhere!'
+            f"channel was not forwarded anywhere!"
             f'Detected tags: extending=[{",".join(extending_tags)}] restrictive=[{",".join(restrictive_tags)}]'
         )
     logger.info(conclusion_log_msg)
     if settings.LOG_REPLIES:
-        post.reply_text(f'Bot log message\n-- -- --\n{conclusion_log_msg}')
+        post.reply_text(f"Bot log message\n-- -- --\n{conclusion_log_msg}")

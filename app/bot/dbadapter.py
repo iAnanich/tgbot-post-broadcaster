@@ -10,7 +10,7 @@ from . import settings
 
 # Enable logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=settings.LOG_LEVEL,
 )
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ def make_session(db_uri: Optional[str] = None) -> Session:
 
 
 class ReceiverGroup(Base):
-    __tablename__ = 'receivergroup'
+    __tablename__ = "receivergroup"
 
     class Default:
         ENABLED = False
@@ -59,20 +59,25 @@ class ReceiverGroup(Base):
         return set(t.lower() for t in self.tags)
 
     @classmethod
-    def get_by_chat_id(cls, chat_id: int, *, session: Session) -> 'ReceiverGroup' or None:
+    def get_by_chat_id(
+        cls, chat_id: int, *, session: Session
+    ) -> "ReceiverGroup" or None:
         try:
             return session.query(cls).filter(cls.chat_id == chat_id).first()
         except OperationalError as exc:
             return None
 
     @classmethod
-    def get_or_create(cls, chat_id: int, title: str,
-                      *, session: Session) -> 'ReceiverGroup':
+    def get_or_create(
+        cls, chat_id: int, title: str, *, session: Session
+    ) -> "ReceiverGroup":
         obj = cls.get_by_chat_id(chat_id=chat_id, session=session)
         if obj is not None:
             return obj
         new_obj = cls(chat_id=chat_id, title=title)
-        logger.info(f'Creating new {cls.__class__.__name__}#{new_obj.id} for chatID={chat_id}')
+        logger.info(
+            f"Creating new {cls.__class__.__name__}#{new_obj.id} for chatID={chat_id}"
+        )
         session.add(new_obj)
         return new_obj
 
@@ -90,7 +95,7 @@ class ReceiverGroup(Base):
     def update_title(self, title: str) -> bool:
         if title != self.title:
             self.title = title
-            logger.info(f'Changing title of chatID={self.chat_id}')
+            logger.info(f"Changing title of chatID={self.chat_id}")
             return True
         # if passed old value - do nothing
         return False
@@ -101,9 +106,9 @@ class ReceiverGroup(Base):
             try:
                 sortable.sort()
             except Exception as exc:
-                logger.warning(f'Tags sorting failed due to error: {exc}')
+                logger.warning(f"Tags sorting failed due to error: {exc}")
             self.tags = sortable
-            logger.info(f'Changing tags of chatID={self.chat_id}')
+            logger.info(f"Changing tags of chatID={self.chat_id}")
             return True
         # if passed old value - do nothing
         return False
@@ -116,29 +121,33 @@ class ReceiverGroup(Base):
         change_to = self.tags_set.difference(set(tags))
         return self.set_tags(tags=change_to)
 
-    def update_tags(self, tags_to_add: Iterable[str], tags_to_remove: Iterable[str]) -> bool:
+    def update_tags(
+        self, tags_to_add: Iterable[str], tags_to_remove: Iterable[str]
+    ) -> bool:
         set_to = self.tags_set.union(set(tags_to_add)).difference(set(tags_to_remove))
         return self.set_tags(tags=set_to)
 
     def __repr__(self) -> str:
-        return f'<ReceiverGroup chat_id={self.chat_id} [{"x" if self.enabled else " "}]>'
+        return (
+            f'<ReceiverGroup chat_id={self.chat_id} [{"x" if self.enabled else " "}]>'
+        )
 
     def to_dict(self) -> dict:
         d = {
-            'chat_id': self.chat_id,
-            'enabled': self.enabled,
-            'title': self.title,
-            'tags': list(self.tags),
+            "chat_id": self.chat_id,
+            "enabled": self.enabled,
+            "title": self.title,
+            "tags": list(self.tags),
         }
         return d
 
     @classmethod
-    def from_dict(cls, d: dict, *, session: Optional[Session]) -> 'ReceiverGroup':
+    def from_dict(cls, d: dict, *, session: Optional[Session]) -> "ReceiverGroup":
         obj = cls(
-            chat_id=d['chat_id'],
-            enabled=d.get('enabled', False),
-            title=d.get('title', None),
-            tags=d.get('tags', []),
+            chat_id=d["chat_id"],
+            enabled=d.get("enabled", False),
+            title=d.get("title", None),
+            tags=d.get("tags", []),
         )
         if session:
             session.add(obj)
@@ -149,6 +158,7 @@ class ReceiverGroup(Base):
         return [obj.to_dict() for obj in session.query(cls).all()]
 
     @classmethod
-    def load_from_serializable(cls, serializable: [dict, ...],
-                               *, session: Optional[Session]) -> ['ReceiverGroup', ...]:
+    def load_from_serializable(
+        cls, serializable: [dict, ...], *, session: Optional[Session]
+    ) -> ["ReceiverGroup", ...]:
         return [cls.from_dict(obj_dict, session=session) for obj_dict in serializable]
