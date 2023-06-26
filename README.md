@@ -15,7 +15,6 @@ Supported features:
 * optional auto-update of chat's titles when handling new post
 * forward text post or single (not album/group) media with caption
 * optional reply to received post in the source channel
-* tags are case-insensitive
 
 Planned features:
 
