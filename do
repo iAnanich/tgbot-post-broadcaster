@@ -68,6 +68,14 @@ function clear-db {
   docker volume rm ${DB_VOLUME_NAME}
 }
 
+function app {
+  echo "App action:" "$@"
+  #cd app && sh ./do "$@" && cd -
+  cd app
+  ./do "$@"
+  cd -
+}
+
 ### -----------------------------
 ###  end of functions definition
 ### =============================

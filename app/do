@@ -1,0 +1,55 @@
+#!/bin/bash
+
+### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+###  Generated with the help of ChatGPT  ###
+### ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ###
+
+# https://gist.github.com/iAnanich/2b94fdd9de8dc34f1eb6bf9def06e3d5
+# A derivative from ^ aimed for tasks inside container
+
+
+### ==================
+###  Define functions
+### ------------------
+
+# Must have Poetry (virtual) env activated
+
+function tgbot-polling {
+  echo "Start telegram bot"
+  python start_polling.py
+}
+
+function fmt {
+  echo "Format all code"
+  black . "$@"
+}
+
+### -----------------------------
+###  end of functions definition
+### =============================
+
+
+### Handle command (function) execution
+### -----------------------------------
+
+# Generate the command map dynamically based on defined functions
+function generate_command_map {
+  declare -a map
+  for func in $(declare -F | awk '{print $3}'); do
+    if [[ "$func" != "generate_command_map" ]]; then
+      map+=("$func")
+    fi
+  done
+  echo "${map[*]}"
+}
+
+# Define the command mapping
+command_map=($(generate_command_map))
+
+# Parse command line arguments and call the appropriate function
+if [[ " ${command_map[*]} " == *" $1 "* ]]; then
+  # Call the corresponding function
+  "${1}" "${@:2}"
+else
+  echo "Invalid command. Usage: ./do [${command_map[*]}] Got:" "$@"
+fi

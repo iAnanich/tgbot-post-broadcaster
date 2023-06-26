@@ -1,4 +1,4 @@
-# tgbot-post-broadcaster v0.4
+# tgbot-post-broadcaster v0.5
 
 Channel Post Broadcaster Telegram Bot
 
@@ -28,9 +28,9 @@ Planned features:
 To start the bot, please follow the steps below:
 
 * install Python 3.8 or higher
-* install Python packages with `poetry install` or `pip isntall -r requirements.txt`
+* install Python packages with `poetry install`
 * copy `example.env` as `.env` and edit variables inside (it needs your bot token at least)
-* run the code with `python start_polling.py`
+* start with `./do app tgbot-polling`
 
 ### Controls
 

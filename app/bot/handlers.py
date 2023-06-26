@@ -381,6 +381,7 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
             _forward_post(receiver_group=rg, update=update, context=context)
             forwarded_to.append([rg, f'"{rg.title}"#{rg.chat_id}'])
 
+    # TODO: separately make message for TG
     if len(forwarded_to) > 0:
         forwarded_to_str = " , ".join(s for _, s in forwarded_to)
         conclusion_log_msg = (
