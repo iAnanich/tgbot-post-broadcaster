@@ -435,4 +435,7 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
         )
     logger.info(log_msg)
     if settings.LOG_REPLIES:
-        post.reply_text(tg_msg)
+        # Telegram limits message to 4096 unicode code points
+        messages = [tg_msg[i:i + 4096] for i in range(0, len(tg_msg), 4096)]
+        for msg in messages:
+            post.reply_text(msg)
