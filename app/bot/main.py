@@ -9,7 +9,7 @@ from .storage import BotData
 
 # Enable logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     level=settings.LOG_LEVEL,
 )
 logger = logging.getLogger(__name__)
@@ -20,7 +20,9 @@ def main():
 
     filter_admins = Filters.user(username=settings.ADMIN_USERNAMES)
     filter_groups = Filters.chat_type.supergroup | Filters.chat_type.group
-    filter_channel = Filters.chat_type.channel & Filters.sender_chat(settings.SOURCE_CHANNEL)
+    filter_channel = Filters.chat_type.channel & Filters.sender_chat(
+        settings.SOURCE_CHANNEL
+    )
 
     # Create the Updater and pass it your bot's token.
     updater = Updater(settings.TGBOT_APIKEY)
@@ -32,42 +34,52 @@ def main():
     # ----
     dispatcher.add_handler(CommandHandler("help", handlers.command_help))
     # Private commands
-    dispatcher.add_handler(CommandHandler("start", handlers.command_start, filters=Filters.chat_type.private))
+    dispatcher.add_handler(
+        CommandHandler(
+            "start", handlers.command_start, filters=Filters.chat_type.private
+        )
+    )
     # ----
     # Group commands
     dispatcher.add_handler(
         CommandHandler(
-            "debug", handlers.command_debug,
+            "debug",
+            handlers.command_debug,
             filters=filter_admins & filter_groups,
         )
     )
     dispatcher.add_handler(
         CommandHandler(
-            "start", handlers.command_start,
+            "start",
+            handlers.command_start,
             filters=filter_admins & filter_groups,
         )
     )
     dispatcher.add_handler(
         CommandHandler(
-            "status", handlers.command_status,
+            "status",
+            handlers.command_status,
             filters=filter_admins & filter_groups,
         )
     )
     dispatcher.add_handler(
         CommandHandler(
-            "tags", handlers.command_tags,
+            "tags",
+            handlers.command_tags,
             filters=filter_admins & filter_groups,
         )
     )
     dispatcher.add_handler(
         CommandHandler(
-            "enable", handlers.command_enable,
+            "enable",
+            handlers.command_enable,
             filters=filter_admins & filter_groups,
         )
     )
     dispatcher.add_handler(
         CommandHandler(
-            "disable", handlers.command_disable,
+            "disable",
+            handlers.command_disable,
             filters=filter_admins & filter_groups,
         )
     )

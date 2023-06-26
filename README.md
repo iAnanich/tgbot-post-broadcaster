@@ -1,4 +1,4 @@
-# tgbot-post-broadcaster v0.4
+# tgbot-post-broadcaster v0.6
 
 Channel Post Broadcaster Telegram Bot
 
@@ -13,11 +13,12 @@ Supported features:
 * optional tags separation by extension / restriction function
 * optional slow mode delay
 * optional auto-update of chat's titles when handling new post
-* forward text post or photo with caption
-* can reply to received post in the source channel
+* forward text post or single (not album/group) media with caption
+* optional reply to received post in the source channel
 
 Planned features:
 
+* forwarding media albums
 * support for multiple sources (sender) channels.
 * configurable channels for sourcing posts.
 
@@ -25,10 +26,10 @@ Planned features:
 
 To start the bot, please follow the steps below:
 
-* install Python 3.8 or higher
-* install Python packages with `poetry install` or `pip isntall -r requirements.txt`
+* install Python 3.10 or higher
+* install Python packages with `poetry install`
 * copy `example.env` as `.env` and edit variables inside (it needs your bot token at least)
-* run the code with `python start_polling.py`
+* start with `./do app tgbot-polling`
 
 ### Controls
 
