@@ -375,8 +375,8 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     )
 
     logger.debug(
-        f'Post #{post.message_id} in "{update.effective_chat.title}" tg#{update.effective_chat.id} channel contains: '
-        f'extending=[{",".join(extending_tags)}], restrictive=[{",".join(restrictive_tags)}]'
+        f'Post #{post.message_id} in "{update.effective_chat.title}" tg#{update.effective_chat.id} channel '
+        f'contains allowed tags: extending=[{",".join(extending_tags)}], restrictive=[{",".join(restrictive_tags)}]'
     )
 
     with db_session_from_context(context) as db_session:
@@ -407,32 +407,33 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
 
     # conclusion:
     # -----------
-    log_msg_prefix = f'Post #{post.message_id} from "{update.effective_chat.title}" tg#{update.effective_chat.id} channel '
+    log_msg_prefix = (
+        f"Summary for post #{post.message_id} from "
+        f"\"{update.effective_chat.title}\" tg#{update.effective_chat.id} channel. "
+        f"Detected (extracted; allowed) tags: "
+        f"extending=[{','.join(extending_tags)}] "
+        f"restrictive=[{','.join(restrictive_tags)}]. "
+    )
     tg_msg_prefix = (
-        f"Bot log message in regard of post #{post.message_id}\n" f"-- -- --\n"
+        f"Bot log message summary in regard of post #{post.message_id}\n" 
+        f"-- -- --\n"
+        f"Detected (extracted; allowed) tags:\n"
+        f"extending = {' , '.join(extending_tags) or '<none>'}\n"
+        f"restrictive = {' , '.join(restrictive_tags) or '<none>'}\n"
     )
     if len(receivers_list) > 0:
-        log_msg = f"{log_msg_prefix}forwarded into {len(receivers_list)} chat(s): {receivers_list}"
+        log_msg = log_msg_prefix + f"Post was forwarded into {len(receivers_list)} chat(s): {receivers_list}"
         tg_msg = (
-            tg_msg_prefix + f"Post was forwarded into {len(receivers_list)} chat(s):\n"
+            tg_msg_prefix +
+            f"Post was forwarded into {len(receivers_list)} chat(s):\n" +
             "\n".join(
                 f" * `{tg_dict['title']}` tg#{tg_dict['chat_id']}"
                 for tg_dict in receivers_list
             )
         )
     else:
-        log_msg = (
-            f"{log_msg_prefix}was not forwarded anywhere! "
-            f"Detected (extracted) tags: "
-            f'extending=[{",".join(extending_tags)}] '
-            f'restrictive=[{",".join(restrictive_tags)}]'
-        )
-        tg_msg = (
-            tg_msg_prefix + f"Post was not forwarded into any chats.\n"
-            f"Detected (extracted) tags:\n"
-            f'extending = {" , ".join(extending_tags) or "<none>"}\n'
-            f'restrictive = {" , ".join(restrictive_tags) or "<none>"}'
-        )
+        log_msg = log_msg_prefix + "Post was not forwarded anywhere!"
+        tg_msg = tg_msg_prefix + "Post was not forwarded into any chats."
     logger.info(log_msg)
     if settings.LOG_REPLIES:
         # Telegram limits message to 4096 unicode code points
