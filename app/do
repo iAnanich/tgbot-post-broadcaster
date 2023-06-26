@@ -19,6 +19,11 @@ function tgbot-polling {
   python start_polling.py
 }
 
+function create-tables {
+  echo "Create tables in DB"
+  python -c "from bot.dbadapter import create_all_tables; create_all_tables()"
+}
+
 function fmt {
   echo "Format all code"
   black . "$@"
