@@ -1,7 +1,7 @@
 import logging
 import time
 from contextlib import contextmanager
-from typing import Set, Iterable, List
+from typing import Set, Iterable
 
 import telegram
 from telegram import Update, Message
@@ -354,10 +354,10 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     """Broadcast post from channel to connected groups."""
     post = update.effective_message
     logger.debug(
-        f'Post #{post.message_id} in "{update.effective_chat.title}" #{update.effective_chat.id} channel.'
+        f'Post #{post.message_id} in "{update.effective_chat.title}" tg#{update.effective_chat.id} channel.'
     )
 
-    forwarded_to: List[List[ReceiverGroup, str]] = []
+    receivers_list: list[dict[str, str | int]] = []
 
     extending_tags = frozenset(
         t.lower()
@@ -375,8 +375,8 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
     )
 
     logger.debug(
-        f'Post #{post.message_id} in "{update.effective_chat.title}" #{update.effective_chat.id} channel contains: '
-        f'extending=[{",".join(extending_tags)}], restrictive=[{restrictive_tags}]'
+        f'Post #{post.message_id} in "{update.effective_chat.title}" tg#{update.effective_chat.id} channel contains: '
+        f'extending=[{",".join(extending_tags)}], restrictive=[{",".join(restrictive_tags)}]'
     )
 
     with db_session_from_context(context) as db_session:
@@ -401,21 +401,38 @@ def handler_broadcast_post(update: Update, context: CallbackContext) -> None:
                 time.sleep(settings.SLOW_MODE_DELAY)
 
             _forward_post(receiver_group=rg, update=update, context=context)
-            forwarded_to.append([rg, f'"{rg.title}"#{rg.chat_id}'])
+            receivers_list.append(
+                {"title": rg.title, "chat_id": rg.chat_id, "dbid": rg.id}
+            )
 
-    # TODO: separately сompose message for TG
-    if len(forwarded_to) > 0:
-        forwarded_to_str = " , ".join(s for _, s in forwarded_to)
-        conclusion_log_msg = (
-            f'Post #{post.message_id} from "{update.effective_chat.title}" #{update.effective_chat.id} '
-            f"channel forwarded into {len(forwarded_to)} chat(s): {forwarded_to_str}"
+    # conclusion:
+    # -----------
+    log_msg_prefix = f'Post #{post.message_id} from "{update.effective_chat.title}" tg#{update.effective_chat.id} channel '
+    tg_msg_prefix = (
+        f"Bot log message in regard of post #{post.message_id}\n" f"-- -- --\n"
+    )
+    if len(receivers_list) > 0:
+        log_msg = f"{log_msg_prefix}forwarded into {len(receivers_list)} chat(s): {receivers_list}"
+        tg_msg = (
+            tg_msg_prefix + f"Post was forwarded into {len(receivers_list)} chat(s):\n"
+            "\n".join(
+                f" * `{tg_dict['title']}` tg#{tg_dict['chat_id']}"
+                for tg_dict in receivers_list
+            )
         )
     else:
-        conclusion_log_msg = (
-            f'Received post #{post.message_id} from "{update.effective_chat.title}" #{update.effective_chat.id} '
-            f"channel was not forwarded anywhere!"
-            f'Detected tags: extending=[{",".join(extending_tags)}] restrictive=[{",".join(restrictive_tags)}]'
+        log_msg = (
+            f"{log_msg_prefix}was not forwarded anywhere! "
+            f"Detected (extracted) tags: "
+            f'extending=[{",".join(extending_tags)}] '
+            f'restrictive=[{",".join(restrictive_tags)}]'
         )
-    logger.info(conclusion_log_msg)
+        tg_msg = (
+            tg_msg_prefix + f"Post was not forwarded into any chats.\n"
+            f"Detected (extracted) tags:\n"
+            f'extending = {" , ".join(extending_tags) or "<none>"}\n'
+            f'restrictive = {" , ".join(restrictive_tags) or "<none>"}'
+        )
+    logger.info(log_msg)
     if settings.LOG_REPLIES:
-        post.reply_text(f"Bot log message\n-- -- --\n{conclusion_log_msg}")
+        post.reply_text(tg_msg)
