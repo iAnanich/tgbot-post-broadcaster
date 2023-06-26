@@ -27,7 +27,7 @@ Planned features:
 
 To start the bot, please follow the steps below:
 
-* install Python 3.8 or higher
+* install Python 3.10 or higher
 * install Python packages with `poetry install`
 * copy `example.env` as `.env` and edit variables inside (it needs your bot token at least)
 * start with `./do app tgbot-polling`
