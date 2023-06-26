@@ -62,6 +62,32 @@ function dc {
   ${_DOCKER_COMPOSE_COMMAND} "$@"
 }
 
+function restart {
+  echo "Restart:" "$@"
+  try dc restart "$@"
+  dc logs -f
+}
+
+function update {
+  echo "Update:" "$@"
+  try dc build "$@"
+  try dc up -d --force-recreate "$@"
+  dc logs -f
+}
+
+function build {
+  echo "Build docker image"
+  IMAGE=${IMAGE_NAME:-djaram}:${IMAGE_TAG:-edge}
+  docker build -t ${IMAGE} .
+}
+
+function spin {
+  # quickly roll dockerized app
+  try build
+  try dc up -d
+  dc logs -f
+}
+
 function clear-db {
   echo "Clearing DB data..."
   DB_VOLUME_NAME=${COMPOSE_PROJECT_NAME}_pgdata
